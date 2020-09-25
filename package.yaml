@@ -1,0 +1,75 @@
+name:                tinybasic
+version:             0.0.0.0
+synopsis:            "TinyBasic machine: CPU core and serial IO"
+homepage:            https://github.com/gergoerdi/clash-tinybasic
+license:             MIT
+author:              Gergő Érdi
+maintainer:          gergo@erdi.hu
+copyright:           2020 Gergő Érdi
+category:            Hardware
+
+extra-source-files:
+  - LICENSE
+  - README.md
+
+data-files:
+  - image/*/*
+
+dependencies:
+  - base >= 4.7 && < 5
+  - clash-prelude
+  - ghc-typelits-natnormalise
+  - ghc-typelits-extra
+  - ghc-typelits-knownnat
+
+  - retroclash-lib
+  - intel8080
+
+  - bytestring
+  - mtl
+  - transformers
+  - array
+
+# Anything that Clash uses by default should go here
+default-extensions:
+  - BinaryLiterals
+  - ConstraintKinds
+  - DataKinds
+  - DeriveAnyClass
+  - DeriveGeneric
+  - DeriveLift
+  - DerivingStrategies
+  - ExplicitForAll
+  - ExplicitNamespaces
+  - FlexibleContexts
+  - FlexibleInstances
+  - KindSignatures
+  - MagicHash
+  - MonoLocalBinds
+  - NoImplicitPrelude
+  - NoMonomorphismRestriction
+  - NoStarIsType
+  - NoStrictData
+  - NoStrict
+  - QuasiQuotes
+  - ScopedTypeVariables
+  - TemplateHaskellQuotes
+  - TemplateHaskell
+  - TypeApplications
+  - TypeFamilies
+  - TypeOperators
+
+ghc-options:
+  -fexpose-all-unfoldings -fno-worker-wrapper
+  -fplugin GHC.TypeLits.KnownNat.Solver
+  -fplugin GHC.TypeLits.Normalise
+  -fplugin GHC.TypeLits.Extra.Solver
+
+source-dirs:
+  - src
+
+executables:
+  tinybasic-intel8080-model:
+    main: intel8080/model.hs
+    dependencies:
+      - terminal
