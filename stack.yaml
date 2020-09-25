@@ -7,5 +7,6 @@ extra-deps:
 
 packages:
   - retroclash-lib
+  - clash-shake
   - clash-intel8080
   - .

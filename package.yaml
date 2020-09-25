@@ -23,6 +23,7 @@ dependencies:
   - ghc-typelits-knownnat
 
   - retroclash-lib
+  - clash-shake
   - intel8080
 
   - bytestring
