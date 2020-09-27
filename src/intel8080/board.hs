@@ -23,7 +23,7 @@ data PortCommand port a
     deriving (Generic, NFDataX, Show)
 
 topEntity
-    :: "CLOCK" ::: Clock System
+    :: "CLK"   ::: Clock System
     -> "RESET" ::: Reset System
     -> "RX"    ::: Signal System Bit
     -> "TX"    ::: Signal System Bit
