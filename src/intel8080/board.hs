@@ -38,7 +38,7 @@ topEntity = withEnableGen board
             addr <- _addrOut
             write <- _dataOut
             pure $ case (addr, write) of
-                (Right addr, Just write) -> Just (addr, write)
+                (Right addr, Just write) -> Just (addr, pack write)
                 _ -> Nothing
 
         portCmd = do
@@ -48,7 +48,7 @@ topEntity = withEnableGen board
                 Left port -> Just $ maybe (ReadPort port) (WritePort port) write
                 Right addr -> Nothing
 
-        memData = blockRamU ClearOnReset (SNat @0x10000) (const 0) memAddr memWrite
+        memData = unpack <$> blockRamFile (SNat @0x10000) "image-i8080.bin" memAddr memWrite
 
         dataIn = muxA [ portIn, Just <$> memData ]
         interruptRequest = pure False

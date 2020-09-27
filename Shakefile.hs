@@ -44,6 +44,6 @@ main = clashShake clashProject $ do
     xilinxVivado kit nexysA750T "target/nexys-a7-50t" "nexys-a7-50t"
 
     lift $ do
-      buildDir </> "image.bin" %> \out -> do
+      buildDir </> "image-i8080.bin" %> \out -> do
           let imageFile = "image/intel8080/alpha-basic1000.a80.com"
-          binImage (Just $ 0x1000 - 0x0200) imageFile out
+          binImage (Just $ 0x10000) imageFile out
