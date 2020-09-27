@@ -37,7 +37,7 @@ main = clashShake clashProject $ do
     let synDir = buildDir </> clashDir
 
     kit@ClashKit{..} <- clashRules Verilog "src" $ do
-        need [buildDir </> "image.bin"]
+        need [buildDir </> "image-i8080.bin"]
 
     -- xilinxISE kit papilioPro "target/papilio-pro" "papilio-pro"
     -- xilinxISE kit papilioOne "target/papilio-one" "papilio-one"
