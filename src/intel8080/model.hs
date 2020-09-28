@@ -11,21 +11,28 @@ import Data.Maybe
 import Data.Array.IO
 import qualified Data.List as L
 import qualified Data.ByteString as BS
+import Data.Foldable (traverse_)
 
 import Text.Printf
 import Data.Char (chr, ord, isPrint)
 import System.Terminal
+import Control.Concurrent.STM
+import System.Exit
 
 import Paths_tinybasic
 
-waitKey :: (MonadInput m, MonadPrinter m) => MaybeT m Value
-waitKey = do
-    ev <- lift $ flush *> awaitEvent
-    case ev of
-        Left _ -> mzero
-        Right (KeyEvent (CharKey c) mods) | mods == mempty -> return $ fromIntegral . ord $ c
-        Right (KeyEvent EnterKey _) -> return 0x0d
-        _ -> waitKey
+sampleKey :: (MonadInput m, MonadPrinter m) => MaybeT m (Maybe Value)
+sampleKey = do
+    lift flush
+    ev <- MaybeT $ awaitWith $ \int ev -> msum
+        [ Nothing <$ int
+        , Just . Just <$> ev
+        , Just Nothing <$ return ()
+        ]
+    return $ case ev of
+        Just (KeyEvent (CharKey c) mods) | mods == mempty -> Just $ fromIntegral . ord $ c
+        Just (KeyEvent EnterKey _) -> Just 0x0d
+        _ -> Nothing
 
 main :: IO ()
 main = do
@@ -36,8 +43,19 @@ main = do
 
     let verbose = False
 
+    let getKey = lift $ maybe (liftIO exitSuccess) return =<< runMaybeT sampleKey
+        checkInput = do
+            queued <- get
+            case queued of
+                Just prev -> return ()
+                Nothing -> put =<< getKey
+            gets isJust
+        getInput = get <* put Nothing
+
     let getStatus = do
-            let val = 0x03 :: Value
+            inputReady <- checkInput
+            let val | inputReady = 0x03
+                    | otherwise = 0x02
             when verbose $ liftIO $ printf "<- status 0x%02x\n" val
             return val
         putStatus val = do
@@ -45,18 +63,19 @@ main = do
             return 0x00
 
         getData = do
-            when verbose $ putString "<- data "
-            val <- fromMaybe (error "exit") <$> runMaybeT waitKey
+            when verbose $ lift $ putString "<- data "
+            -- val <- fromMaybe (error "exit") <$> runMaybeT waitKey
+            val <- fromMaybe 0x00 <$> getInput
             when verbose $ liftIO $ printf "0x%02x\n" val
             return val
 
         putData val = do
             when verbose $ liftIO $ printf "-> data 0x%02x\t" val
             let c = chr . fromIntegral $ val
-            case val of
+            lift $ case val of
                 0x0d -> putStringLn ""
                 _ | isPrint c -> do
-                    putChar c
+                    putChar c >> flush
                     when verbose $ putStringLn ""
                 _ -> return ()
             return 0x00
@@ -76,7 +95,8 @@ main = do
         let stepTB act = runReaderT `flip` r $ (runMaybeT $ unCPU act)
 
         let s = mkS{ _pc = 0x0100 }
-        flip execStateT s $ forever $ stepTB step
+        let x = flip execStateT s $ forever $ stepTB step
+        flip execStateT Nothing x
 
     return ()
   where

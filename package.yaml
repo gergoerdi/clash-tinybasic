@@ -74,3 +74,4 @@ executables:
     main: intel8080/model.hs
     dependencies:
       - terminal
+      - stm
