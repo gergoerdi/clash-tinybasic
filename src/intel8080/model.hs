@@ -38,7 +38,7 @@ main :: IO ()
 main = do
     romFile <- getDataFileName "image/intel8080/alpha-basic1000.a80.com"
     bs <- BS.unpack <$> BS.readFile romFile
-    let memL = L.take (2 ^ 16) $ L.replicate 0x1000 0x00 <> bs <> L.repeat 0x00
+    let memL = L.take (2 ^ 16) $ bs <> L.repeat 0x00
     (arr :: IOArray Addr Value) <- newListArray (minBound, maxBound) (fromIntegral <$> memL)
 
     let verbose = False
