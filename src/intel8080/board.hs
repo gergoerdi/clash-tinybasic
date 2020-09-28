@@ -54,16 +54,22 @@ topEntity = withEnableGen board
         interruptRequest = pure False
 
         inByte = bitCoerce <$> serialRx @8 (SNat @9600) rx
-        (tx, txDone) = serialTx @8 (SNat @9600) $ fifo (bitCoerce <$> outByte) txDone
+        outFifo = fifo (bitCoerce <$> outByte) txDone
+        (tx, txDone) = serialTx @8 (SNat @9600) outFifo
 
-        (portIn, outByte) = mealyStateB step Nothing (portCmd, inByte)
+        (portIn, outByte) = mealyStateB step Nothing (portCmd, inByte, isNothing <$> outFifo)
           where
-            step :: (Maybe (PortCommand Port Value), Maybe Value) -> State (Maybe Value) (Maybe Value, Maybe Value)
-            step (cmd, inByte) = do
+            step :: (Maybe (PortCommand Port Value), Maybe Value, Bool) -> State (Maybe Value) (Maybe Value, Maybe Value)
+            step (cmd, inByte, outputReady) = do
                 traverse (put . Just) inByte
                 case cmd of
-                    Just (ReadPort 0xde) -> return (Just 0x03, Nothing)
-                    Just (WritePort 0xde x) -> return (Just 0x00, Nothing)
+                    Just (ReadPort 0xde) -> do
+                        inputReady <- isJust <$> get
+                        let val = (if inputReady then 0x01 else 0x00) .|.
+                                  (if outputReady then 0x02 else 0x00)
+                        return (Just val, Nothing)
+                    Just (WritePort 0xde x) -> do
+                        return (Just 0x00, Nothing)
 
                     Just (ReadPort 0xdf) -> do
                         queued <- get <* put Nothing
