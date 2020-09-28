@@ -50,7 +50,7 @@ topEntity = withEnableGen board
 
         memData = unpack <$> blockRamFile (SNat @0x10000) "image-i8080.bin" memAddr memWrite
 
-        dataIn = muxA [ portIn, Just <$> memData ]
+        dataIn = muxA [ delay Nothing portIn, Just <$> memData ]
         interruptRequest = pure False
 
         inByte = bitCoerce <$> serialRx @8 (SNat @9600) rx
