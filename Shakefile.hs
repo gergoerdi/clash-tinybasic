@@ -39,7 +39,12 @@ intel8080 = flip runReaderT "_build/intel8080" $ do
             , "-D__NATIVE_CLOCK__=" <> show clock
             ]
             img
-        synth kit name ("target" </> name) "TinyBASIC"
+        SynthKit{..} <- synth kit name ("target" </> name) "TinyBASIC"
+
+        lift $ mapM_ (uncurry $ nestedPhony ("intel8080" </> name)) $
+          ("clashi", clash ["--interactive", unBuildDir "src/intel8080/board.hs"]) :
+          ("bitfile", need [bitfile]):
+          phonies
 
 main :: IO ()
 main = clashShakeMain "_build" $ do
