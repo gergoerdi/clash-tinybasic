@@ -1,6 +1,6 @@
 name:                tinybasic
 version:             0.0.0.0
-synopsis:            "TinyBasic machine: CPU core and serial IO"
+synopsis:            "TinyBASIC machine: CPU core and serial IO"
 homepage:            https://github.com/gergoerdi/clash-tinybasic
 license:             MIT
 author:              Gergő Érdi
