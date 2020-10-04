@@ -71,6 +71,19 @@ packages:
       sha256: 54160663bf0cbcd1d9fa52e136740faaf91a82d1ca1efeb08e8e58575a7446e7
   original:
     hackage: terminal-0.2.0.0
+- completed:
+    size: 24901
+    subdir: smash-core
+    url: https://github.com/emilypi/smash/archive/bd3ae30bdfef3f92ce5575a1ee10228830afa11b.tar.gz
+    name: smash
+    version: 0.1.2.0
+    sha256: ba4f9b240b264d28633395a538c16b38d43de1677a8dc8eb5abf1ee649a6739f
+    pantry-tree:
+      size: 598
+      sha256: 9510eb772e7b5b81ebc834fbfb6aa69dfa5b910642b1e1579b1f1c84dc9f5739
+  original:
+    subdir: smash-core
+    url: https://github.com/emilypi/smash/archive/bd3ae30bdfef3f92ce5575a1ee10228830afa11b.tar.gz
 snapshots:
 - completed:
     size: 532380
