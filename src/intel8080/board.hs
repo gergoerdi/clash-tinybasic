@@ -1,4 +1,5 @@
-{-# LANGUAGE RecordWildCards, ApplicativeDo #-}
+{-# LANGUAGE RecordWildCards, ApplicativeDo, NumericUnderscores #-}
+{-# LANGUAGE CPP #-}
 
 import Clash.Prelude
 import Clash.Annotations.TH
@@ -17,16 +18,18 @@ import Control.Monad
 import Control.Monad.Trans.Maybe
 import Control.Monad.State
 
+createDomain vSystem{vName="Native", vPeriod = hzToPeriod __NATIVE_CLOCK__}
+
 data PortCommand port a
     = ReadPort port
     | WritePort port a
     deriving (Generic, NFDataX, Show)
 
 topEntity
-    :: "CLK"   ::: Clock System
-    -> "RESET" ::: Reset System
-    -> "RX"    ::: Signal System Bit
-    -> "TX"    ::: Signal System Bit
+    :: "CLK"   ::: Clock Native
+    -> "RESET" ::: Reset Native
+    -> "RX"    ::: Signal Native Bit
+    -> "TX"    ::: Signal Native Bit
 topEntity = withEnableGen board
   where
     board rx = tx
