@@ -1,4 +1,4 @@
-module Top(
+module TinyBASIC(
            input        CLK_32MHZ,
            input        RX,
            output       TX
