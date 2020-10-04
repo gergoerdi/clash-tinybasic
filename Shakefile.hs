@@ -29,11 +29,12 @@ intel8080 = flip runReaderT "_build/intel8080" $ do
         let binFile = "_build/intel8080/image.bin"
         lift $ binFile %> \out -> do
             let imageFile = "image/intel8080/alpha-basic1000.a80.com"
-            binImage (Just $ 0x10000) imageFile out
+            binImage (Just $ 0x8000) imageFile out
         return $ need [binFile]
 
     forM_ targets $ \(name, synth, clock) -> do
         kit@ClashKit{..} <- clashRules Verilog (name </> "clash") "src/intel8080/board.hs"
+            [ "src" ]
             [ "-Wno-partial-type-signatures"
             , "-fclash-inline-limit=600"
             , "-D__NATIVE_CLOCK__=" <> show clock
