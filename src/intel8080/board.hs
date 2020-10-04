@@ -13,6 +13,7 @@ import RetroClash.CPU
 import RetroClash.SerialRx
 import RetroClash.SerialTx
 import RetroClash.Clock
+import RetroClash.Port
 
 import Data.Maybe
 import Control.Monad
@@ -23,43 +24,6 @@ import Data.Bifoldable
 import Data.Bitraversable
 
 createDomain vSystem{vName="Native", vPeriod = hzToPeriod __NATIVE_CLOCK__}
-
-data PortCommand port a
-    = ReadPort port
-    | WritePort port a
-    deriving (Generic, NFDataX, Show, Functor) -- , Bitraversable)
-
-instance Bifunctor PortCommand where
-    {-# INLINE bimap #-}
-    bimap f g = \case
-        ReadPort port -> ReadPort (f port)
-        WritePort port val -> WritePort (f port) (g val)
-
-    {-# INLINE second #-}
-    second = fmap
-
-instance Bifoldable PortCommand where
-    {-# INLINE bifoldMap #-}
-    bifoldMap f g = \case
-        ReadPort port -> f port
-        WritePort port val -> f port <> g val
-
-instance Bitraversable PortCommand where
-    {-# INLINE bitraverse #-}
-    bitraverse f g = \case
-        ReadPort port -> ReadPort <$> f port
-        WritePort port val -> WritePort <$> f port <*> g val
-
-basedAt :: forall n k. (KnownNat n, KnownNat k) => Unsigned (n + k) -> Unsigned (n + k) -> Maybe (Unsigned k)
-basedAt base0 addr = do
-    let (space, offset) = split addr
-    guard $ space == base
-    return offset
-  where
-    (base, _) = split base0
-
-    split :: Unsigned (n + k) -> (Unsigned n, Unsigned k)
-    split = bitCoerce
 
 serialIO
     :: (KnownNat (ClockDivider dom (HzToPeriod rate)), HiddenClockResetEnable dom)
