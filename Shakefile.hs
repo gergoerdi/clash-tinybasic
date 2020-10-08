@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings, RecordWildCards, NumericUnderscores #-}
 import Clash.Shake
+import Clash.Shake.Xilinx
 
 import Development.Shake
 import Development.Shake.Command
@@ -23,30 +24,37 @@ targets =
     , ("papilio-one",  xilinxISE papilioOne,     32_000_000)
     ]
 
+outDir = "_build"
+
 intel8080 :: Rules ()
-intel8080 = flip runReaderT "_build/intel8080" $ do
-    img <- do
-        let binFile = "_build/intel8080/image.bin"
-        lift $ binFile %> \out -> do
-            let imageFile = "image/intel8080/alpha-basic1000.a80.com"
-            binImage (Just $ 0x8000) imageFile out
-        return $ need [binFile]
+intel8080 = do
+    let binFile = outDir </> "intel8080/image.bin"
+    binFile %> \out -> do
+        let imageFile = "image/intel8080/alpha-basic1000.a80.com"
+        binImage (Just $ 0x8000) imageFile out
 
     forM_ targets $ \(name, synth, clock) -> do
-        kit@ClashKit{..} <- clashRules Verilog (name </> "clash") "src/intel8080/board.hs"
+        kit@ClashKit{..} <- clashRules (outDir </> "intel8080") (name </> "clash") Verilog
             [ "src" ]
+            "src/intel8080/board.hs"
             [ "-Wno-partial-type-signatures"
             , "-fclash-inline-limit=600"
             , "-D__NATIVE_CLOCK__=" <> show clock
-            ]
-            img
-        SynthKit{..} <- synth kit name ("target" </> name) "TinyBASIC"
+            ] $
+            need [binFile]
+        SynthKit{..} <- synth kit (outDir </> "intel8080" </> name </> "synth") ("target" </> name) "TinyBASIC"
 
-        lift $ mapM_ (uncurry $ nestedPhony ("intel8080" </> name)) $
+        mapM_ (uncurry $ nestedPhony ("intel8080" </> name)) $
           ("clashi", clash ["--interactive", unBuildDir "src/intel8080/board.hs"]) :
           ("bitfile", need [bitfile]):
           phonies
 
 main :: IO ()
-main = clashShakeMain "_build" $ do
+main = shakeArgs shakeOptions{ shakeFiles = outDir } $ do
+    useConfig "build.mk"
+
+    phony "clean" $ do
+        putNormal $ "Cleaning files in " <> outDir
+        removeFilesAfter outDir [ "//*" ]
+
     intel8080
