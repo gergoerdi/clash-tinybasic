@@ -34,7 +34,7 @@ intel8080 = do
         binImage (Just $ 0x8000) imageFile out
 
     forM_ targets $ \(name, synth, clock) -> do
-        kit@ClashKit{..} <- clashRules (outDir </> "intel8080") (name </> "clash") Verilog
+        kit@ClashKit{..} <- clashRules (outDir </> "intel8080" </> name </> "clash") Verilog
             [ "src" ]
             "src/intel8080/board.hs"
             [ "-Wno-partial-type-signatures"
@@ -45,7 +45,7 @@ intel8080 = do
         SynthKit{..} <- synth kit (outDir </> "intel8080" </> name </> "synth") ("target" </> name) "TinyBASIC"
 
         mapM_ (uncurry $ nestedPhony ("intel8080" </> name)) $
-          ("clashi", clash ["--interactive", unBuildDir "src/intel8080/board.hs"]) :
+          ("clashi", clash ["--interactive", "src/intel8080/board.hs"]) :
           ("bitfile", need [bitfile]):
           phonies
 

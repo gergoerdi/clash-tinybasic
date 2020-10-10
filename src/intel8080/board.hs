@@ -40,7 +40,7 @@ topEntity = withEnableGen board
                 return tx
 
             mem = do
-                mask @15 0x0000 $ rom $ fmap unpack . romFilePow2 "image.bin"
+                mask @15 0x0000 $ rom $ fmap unpack . romFilePow2 "_build/intel8080/image.bin"
                 mask @15 0x8000 $ ram $ blockRamU ClearOnReset (SNat @0x8000) (const 0)
 
 makeTopEntity 'topEntity
