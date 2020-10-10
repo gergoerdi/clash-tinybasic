@@ -17,7 +17,7 @@ acia
     => SNat rate
     -> Signal dom Bit
     -> Signal dom (Maybe (PortCommand (Unsigned 1) (Unsigned 8)))
-    -> (Signal dom (Unsigned 8), Signal dom Bit)
+    -> (Signal dom (Maybe (Unsigned 8)), Signal dom Bit)
 acia rate rx cmd = (portOut, tx)
   where
     inByte = fmap unpack <$> serialRx @8 rate rx
@@ -33,14 +33,14 @@ acia rate rx cmd = (portOut, tx)
                 inReady <- isJust <$> get
                 let val = (if inReady then 0x01 else 0x00) .|.
                           (if outReady then 0x02 else 0x00)
-                return (val, Nothing)
+                return (Just val, Nothing)
             Just (WritePort 0x0 x) -> do
-                return (0x00, Nothing)
+                return (Just 0x00, Nothing)
 
             Just (ReadPort 0x1) -> do
                 queued <- get <* put Nothing
-                return (fromMaybe 0x00 queued, Nothing)
+                return (Just $ fromMaybe 0x00 queued, Nothing)
             Just (WritePort 0x1 x) -> do
-                return (0x00, Just x)
+                return (Just 0x00, Just x)
 
-            _ -> return (0x00, Nothing)
+            _ -> return (Nothing, Nothing)
