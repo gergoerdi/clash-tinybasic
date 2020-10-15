@@ -29,7 +29,7 @@ topEntity = withEnableGen board
   where
     board rx = tx
       where
-        cpuOut@CPUOut{..} = mealyCPU initState defaultOut (void . runMaybeT . cpu) CPUIn{..}
+        cpuOut@CPUOut{..} = mealyCPU (initState 0x0000) defaultOut (void . runMaybeT . cpu) CPUIn{..}
 
         interruptRequest = pure False
 

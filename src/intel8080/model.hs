@@ -92,9 +92,9 @@ main = do
 
     withTerminal $ runTerminalT $ do
         let r = MkR (liftIO . readArray arr) (\addr x -> liftIO $ writeArray arr addr x) inPort outPort
-        let stepTB act = runReaderT `flip` r $ (runMaybeT $ unCPU act)
+        let stepTB act = runReaderT (unCPU act) r
 
-        let s = mkS{ _pc = 0x0100 }
+        let s = mkState 0x0100
         let x = flip execStateT s $ forever $ stepTB step
         flip execStateT Nothing x
 
