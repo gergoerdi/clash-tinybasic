@@ -97,11 +97,8 @@ main = do
                 , inPort = inPort
                 , outPort = outPort
                 }
-        let stepTB act = runReaderT (unCPU act) w
-
-        let s = mkState 0x0100
-        let x = flip execStateT s $ forever $ stepTB step
-        flip execStateT Nothing x
+            s = mkState 0x0100
+        execStateT (runSoftCPU w s) Nothing
 
     return ()
   where
