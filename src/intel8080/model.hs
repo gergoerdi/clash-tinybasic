@@ -91,8 +91,13 @@ main = do
           | otherwise = \_ -> return 0x00
 
     withTerminal $ runTerminalT $ do
-        let r = MkR (liftIO . readArray arr) (\addr x -> liftIO $ writeArray arr addr x) inPort outPort
-        let stepTB act = runReaderT (unCPU act) r
+        let w = World
+                { readMem = liftIO . readArray arr
+                , writeMem = \addr x -> liftIO $ writeArray arr addr x
+                , inPort = inPort
+                , outPort = outPort
+                }
+        let stepTB act = runReaderT (unCPU act) w
 
         let s = mkState 0x0100
         let x = flip execStateT s $ forever $ stepTB step
