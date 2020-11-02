@@ -29,11 +29,11 @@ topEntity = withEnableGen board
   where
     board rx = tx
       where
-        cpuOut@CPUOut{..} = mealyCPU (initState 0x0000) defaultOut (void . runMaybeT . cpu) CPUIn{..}
+        cpuOut@CPUOut{..} = mealyCPU (initState 0x0000) defaultOut cpu CPUIn{..}
 
         interruptRequest = pure False
 
-        (dataIn, (tx, ())) = memoryMap (Just <$> _addrOut) _dataOut $ ports <||> mem
+        (dataIn, (tx, ())) = memoryMap _addrOut _dataOut $ ports <||> mem
           where
             ports = do
                 tx <- mask 0xde $ port $ acia (SNat @9600) rx
