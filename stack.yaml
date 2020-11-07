@@ -11,6 +11,9 @@ extra-deps:
     subdirs:
       - smash-core
 
+  - github: gergoerdi/clashilator
+    commit: 564f21dd972dc12f11aa97e08d01ede8ebfbd5b5
+
 packages:
   - retroclash-lib
   - clash-shake

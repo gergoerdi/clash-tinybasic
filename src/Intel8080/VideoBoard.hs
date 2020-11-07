@@ -1,4 +1,6 @@
 {-# LANGUAGE RecordWildCards, NumericUnderscores #-}
+module Intel8080.VideoBoard where
+
 import Clash.Prelude hiding (rom)
 import Clash.Annotations.TH
 

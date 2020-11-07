@@ -40,7 +40,7 @@ intel8080 = do
 
         kit@ClashKit{..} <- clashRules (targetDir </> "clash") Verilog
             [ "src" ]
-            "src/intel8080/video-board.hs"
+            "Intel8080.VideoBoard"
             [ "-Wno-partial-type-signatures"
             , "-fclash-inline-limit=600"
             ] $
@@ -61,7 +61,7 @@ intel8080 = do
 
         kit@ClashKit{..} <- clashRules (targetDir </> "clash") Verilog
             [ "src" ]
-            "src/intel8080/serial-board.hs"
+            "src/Intel8080/serial-board.hs"
             [ "-Wno-partial-type-signatures"
             , "-fclash-inline-limit=600"
             , "-D__NATIVE_CLOCK__=" <> show clock
@@ -70,7 +70,7 @@ intel8080 = do
         SynthKit{..} <- synth kit (targetDir </> "synth") ("target" </> name) "TinyBASICSerial"
 
         mapM_ (uncurry $ nestedPhony ("intel8080/serial" </> name)) $
-          ("clashi", clash ["--interactive", "src/intel8080/serial-board.hs"]) :
+          ("clashi", clash ["--interactive", "src/Intel8080/serial-board.hs"]) :
           ("bitfile", need [bitfile]):
           phonies
 

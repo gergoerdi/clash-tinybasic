@@ -66,12 +66,25 @@ ghc-options:
   -fplugin GHC.TypeLits.Normalise
   -fplugin GHC.TypeLits.Extra.Solver
 
+custom-setup:
+  dependencies:
+    - base
+    - Cabal
+    - clashilator
+    
 source-dirs:
   - src
 
 executables:
   tinybasic-intel8080-model:
-    main: intel8080/model.hs
+    main: Intel8080/model.hs
     dependencies:
       - terminal
       - stm
+
+  tinybasic-intel8080-video:
+    main: intel8080/verilator.hs
+    verbatim:
+      x-clashilator-top-is: Intel8080.VideoBoard
+      x-clashilator-clock: CLK_25MHZ
+      x-clashilator-clash-flags: -fclash-inline-limit=400
