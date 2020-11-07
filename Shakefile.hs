@@ -33,8 +33,29 @@ intel8080 = do
         let imageFile = "image/intel8080/alpha-basic1000.a80.com"
         binImage (Just $ 0x8000) imageFile out
 
+    do
+        let targetDir = outDir </> "intel8080/video"
+
+        kit@ClashKit{..} <- clashRules (targetDir </> "clash") Verilog
+            [ "src" ]
+            "src/intel8080/video-board.hs"
+            [ "-Wno-partial-type-signatures"
+            , "-fclash-inline-limit=600"
+            ] $
+            need [binFile]
+
+        forM_ targets $ \(name, synth, _) -> do
+            SynthKit{..} <- synth kit (targetDir </> name </> "synth") ("target" </> name) "TinyBASICVideo"
+
+            mapM_ (uncurry $ nestedPhony ("intel8080/video" </> name)) $
+              ("bitfile", need [bitfile]):
+              phonies
+
+        nestedPhony ("intel8080/video") "clashi" $
+          clash ["--interactive", "src/intel8080/video-board.hs"]
+
     forM_ targets $ \(name, synth, clock) -> do
-        let targetDir = outDir </> "intel8080" </> name </> "serial"
+        let targetDir = outDir </> "intel8080/serial" </> name
 
         kit@ClashKit{..} <- clashRules (targetDir </> "clash") Verilog
             [ "src" ]
@@ -44,9 +65,9 @@ intel8080 = do
             , "-D__NATIVE_CLOCK__=" <> show clock
             ] $
             need [binFile]
-        SynthKit{..} <- synth kit (targetDir </> "synth") ("target" </> name) "TinyBASIC"
+        SynthKit{..} <- synth kit (targetDir </> "synth") ("target" </> name) "TinyBASICSerial"
 
-        mapM_ (uncurry $ nestedPhony ("intel8080" </> name </> "serial")) $
+        mapM_ (uncurry $ nestedPhony ("intel8080/serial" </> name)) $
           ("clashi", clash ["--interactive", "src/intel8080/serial-board.hs"]) :
           ("bitfile", need [bitfile]):
           phonies
