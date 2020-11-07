@@ -26,6 +26,8 @@ targets =
 
 outDir = "_build"
 
+fontFile = outDir </> "font.bin"
+
 intel8080 :: Rules ()
 intel8080 = do
     let binFile = outDir </> "intel8080/image.bin"
@@ -42,7 +44,7 @@ intel8080 = do
             [ "-Wno-partial-type-signatures"
             , "-fclash-inline-limit=600"
             ] $
-            need [binFile]
+            need [binFile, fontFile]
 
         forM_ targets $ \(name, synth, _) -> do
             SynthKit{..} <- synth kit (targetDir </> name </> "synth") ("target" </> name) "TinyBASICVideo"
@@ -79,5 +81,9 @@ main = shakeArgs shakeOptions{ shakeFiles = outDir } $ do
     phony "clean" $ do
         putNormal $ "Cleaning files in " <> outDir
         removeFilesAfter outDir [ "//*" ]
+
+    fontFile %> \out -> do
+        let imageFile = "image/font.dat"
+        binImage (Just $ 8 * 256) imageFile out
 
     intel8080
