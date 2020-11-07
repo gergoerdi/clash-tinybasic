@@ -3,9 +3,6 @@ module Hardware.ACIA where
 import Clash.Prelude
 
 import RetroClash.Utils
-import RetroClash.SerialRx
-import RetroClash.SerialTx
-import RetroClash.Clock
 import RetroClash.Port
 
 import Data.Maybe
@@ -13,18 +10,14 @@ import Control.Monad.State
 
 -- Asynchronous Communications Interface Adapter
 acia
-    :: (KnownNat (ClockDivider dom (HzToPeriod rate)), HiddenClockResetEnable dom)
-    => SNat rate
-    -> Signal dom Bit
+    :: (HiddenClockResetEnable dom)
+    => Signal dom (Maybe (Unsigned 8))
+    -> Signal dom Bool
     -> Signal dom (Maybe (PortCommand (Unsigned 1) (Unsigned 8)))
-    -> (Signal dom (Maybe (Unsigned 8)), Signal dom Bit)
-acia rate rx cmd = (portOut, tx)
+    -> (Signal dom (Maybe (Unsigned 8)), Signal dom (Maybe (Unsigned 8)))
+acia inByte outReady cmd = (portOut, outByte)
   where
-    inByte = fmap unpack <$> serialRx @8 rate rx
-    outFifo = fifo (fmap pack <$> outByte) txDone
-    (tx, txDone) = serialTx @8 rate outFifo
-
-    (portOut, outByte) = mealyStateB step Nothing (inByte, isNothing <$> outFifo, cmd)
+    (portOut, outByte) = mealyStateB step Nothing (inByte, outReady, cmd)
 
     step (inByte, outReady, cmd) = do
         traverse (put . Just) inByte

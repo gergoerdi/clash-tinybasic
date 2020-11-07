@@ -13,6 +13,8 @@ import RetroClash.CPU
 import RetroClash.Clock
 import RetroClash.Port
 import RetroClash.Memory
+import RetroClash.SerialRx
+import RetroClash.SerialTx
 
 import Data.Maybe
 import Control.Monad
@@ -33,11 +35,15 @@ topEntity = withEnableGen board
 
         interruptRequest = pure False
 
-        (dataIn, (tx, ())) = memoryMap _addrOut _dataOut $ ports <||> mem
+        inByte = fmap unpack <$> serialRx @8 (SNat @9600) rx
+        outFifo = fifo outByte txDone
+        (tx, txDone) = serialTx @8 (SNat @9600) (fmap pack <$> outFifo)
+
+        (dataIn, (outByte, ())) = memoryMap _addrOut _dataOut $ ports <||> mem
           where
             ports = do
-                tx <- mask 0xde $ port $ acia (SNat @9600) rx
-                return tx
+                outByte <- mask 0xde $ port $ acia inByte (isNothing <$> outFifo)
+                return outByte
 
             mem = do
                 mask @15 0x0000 $ readOnly $ fmap unpack . romFilePow2 "_build/intel8080/image.bin"
