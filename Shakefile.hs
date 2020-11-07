@@ -54,25 +54,25 @@ intel8080 = do
               phonies
 
         nestedPhony ("intel8080/video") "clashi" $
-          clash ["--interactive", "src/intel8080/video-board.hs"]
+          clash ["--interactive", "src/Intel8080/VideoBoard.hs"]
 
-    forM_ targets $ \(name, synth, clock) -> do
-        let targetDir = outDir </> "intel8080/serial" </> name
+    -- forM_ targets $ \(name, synth, clock) -> do
+    --     let targetDir = outDir </> "intel8080/serial" </> name
 
-        kit@ClashKit{..} <- clashRules (targetDir </> "clash") Verilog
-            [ "src" ]
-            "src/Intel8080/serial-board.hs"
-            [ "-Wno-partial-type-signatures"
-            , "-fclash-inline-limit=600"
-            , "-D__NATIVE_CLOCK__=" <> show clock
-            ] $
-            need [binFile]
-        SynthKit{..} <- synth kit (targetDir </> "synth") ("target" </> name) "TinyBASICSerial"
+    --     kit@ClashKit{..} <- clashRules (targetDir </> "clash") Verilog
+    --         [ "src" ]
+    --         "src/Intel8080/serial-board.hs"
+    --         [ "-Wno-partial-type-signatures"
+    --         , "-fclash-inline-limit=600"
+    --         , "-D__NATIVE_CLOCK__=" <> show clock
+    --         ] $
+    --         need [binFile]
+    --     SynthKit{..} <- synth kit (targetDir </> "synth") ("target" </> name) "TinyBASICSerial"
 
-        mapM_ (uncurry $ nestedPhony ("intel8080/serial" </> name)) $
-          ("clashi", clash ["--interactive", "src/Intel8080/serial-board.hs"]) :
-          ("bitfile", need [bitfile]):
-          phonies
+    --     mapM_ (uncurry $ nestedPhony ("intel8080/serial" </> name)) $
+    --       ("clashi", clash ["--interactive", "src/Intel8080/serial-board.hs"]) :
+    --       ("bitfile", need [bitfile]):
+    --       phonies
 
 main :: IO ()
 main = shakeArgs shakeOptions{ shakeFiles = outDir } $ do
