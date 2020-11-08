@@ -19,11 +19,13 @@ createDomain vSystem{vName="Dom25", vPeriod = hzToPeriod 25_175_000}
 
 -- TODO: make these parameters
 type TextWidth = 64
-type TextHeight = 40
+type TextHeight = 48
 type FontWidth = 8
 type FontHeight = 8
 type ScreenWidth = TextWidth * FontWidth
 type ScreenHeight = TextHeight * FontHeight
+
+type TextCoord = (Index TextHeight, Index TextWidth)
 
 data EditorState
     = Ready (Index TextHeight) (Index TextWidth)
@@ -33,10 +35,17 @@ data EditorState
 screenEditor
     :: (HiddenClockResetEnable dom)
     => Signal dom (Maybe (Unsigned 8))
-    -> (Signal dom Bool, Signal dom (Maybe ((Index TextHeight, Index TextWidth), Unsigned 8)))
+    -> (Signal dom Bool, Signal dom TextCoord, Signal dom (Maybe (TextCoord, Unsigned 8)))
 screenEditor = mealyStateB step (Ready 0 0)
   where
-    step chr = get >>= \case
+    step chr = do
+        (ready, write) <- putChar chr
+        cursor <- gets $ \case
+            Clear y x -> (y, 0)
+            Ready y x -> (y, x)
+        return (ready, cursor, write)
+
+    putChar chr = get >>= \case
         Clear y x -> do
             put $ maybe (Ready y 0) (Clear y) $ succIdx x
             return (False, Just ((y, x), 0x20))
@@ -58,29 +67,34 @@ screenEditor = mealyStateB step (Ready 0 0)
 
 video
     :: (HiddenClockResetEnable Dom25)
-    => Signal Dom25 (Maybe ((Index TextHeight, Index TextWidth), Unsigned 8))
+    => Signal Dom25 TextCoord
+    -> Signal Dom25 (Maybe (TextCoord, Unsigned 8))
     -> ( Signal Dom25 Bool
        , VGAOut Dom25 8 8 8
        )
-video (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb)
+video (fromSignal -> cursor) (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb)
   where
     VGADriver{..} = vgaDriver vga640x480at60
     frameEnd = isFalling False (isJust <$> vgaY)
+
+    showCursor = regEn True (isRising False $ cnt .==. 0) $ not <$> showCursor
+      where
+        cnt = regEn (0 :: Index 30) frameEnd $ nextIdx <$> cnt
 
     visible = fromSignal $ isJust <$> charX .&&. isJust <$> charY
     newChar = fromSignal $ charX ./=. register Nothing charX
 
     charAddr = do
         new <- newChar
-        x <- fromSignal charX
-        y <- fromSignal charY
+        yx <- charYX
         pure $ do
             guard new
-            (,) <$> y <*> x
+            yx
+
     charLoad =
         enable (delayI False newChar) $
         delayedRam (blockRam1 ClearOnReset (SNat @(TextWidth * TextHeight)) 0)
-               (maybe (0 :: Unsigned (CLog 2 TextHeight + CLog 2 TextWidth)) bitCoerce <$> charAddr)
+               (maybe (0 :: Unsigned (BitSize TextCoord)) bitCoerce <$> charAddr)
                (fmap (\(a, d) -> (bitCoerce a, d)) <$> w)
 
     glyphAddr = liftA2 (,) <$> charLoad <*> delayI Nothing (fromSignal glyphY)
@@ -90,8 +104,13 @@ video (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb)
     frame = pure (0x30, 0x30, 0x30)
     fg = pure maxBound
     bg = pure minBound
+
+    (fg', bg') = (mux isCursor bg fg, mux isCursor fg bg)
+      where
+        isCursor = delayI False $ fromSignal showCursor .&&. charYX .==. (Just <$> cursor)
+
     rgb = mux (not <$> delayI False visible) frame $
-          mux (bitToBool <$> pixel) fg bg
+          mux (bitToBool <$> pixel) fg' bg'
 
     newPixel = fromSignal $ glyphX ./=. register Nothing glyphX
     row = delayedRegister 0x00 $ \row ->
@@ -104,6 +123,7 @@ video (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb)
 
     (charX, glyphX) = scale @TextWidth (SNat @FontWidth) . center $ vgaX
     (charY, glyphY) = scale @TextHeight (SNat @FontHeight) . center $ vgaY
+    charYX = fromSignal $ liftA2 (,) <$> charY <*> charX
 
 fontRom :: (HiddenClockResetEnable dom) => DSignal dom n (Unsigned 8, Index 8) -> DSignal dom (n + 1) (Unsigned 8)
 fontRom = delayedRom $ fmap unpack . romFilePow2 "font.bin" . fmap toAddr

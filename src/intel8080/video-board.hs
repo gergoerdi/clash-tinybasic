@@ -34,8 +34,8 @@ topEntity = withEnableGen board
   where
     board rx ps2 = vga
       where
-        (frameEnd, vga) = video vidWrite
-        (vidReady, vidWrite) = screenEditor outByte
+        (frameEnd, vga) = video cursor vidWrite
+        (vidReady, cursor, vidWrite) = screenEditor outByte
 
         cpuOut@CPUOut{..} = mealyCPU (initState 0x0000) defaultOut cpu CPUIn{..}
 
