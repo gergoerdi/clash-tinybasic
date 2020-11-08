@@ -2,6 +2,8 @@ module TinyBASICVideo(
            input        CLK100MHZ,
            input        UART_TXD_IN,
            output       UART_RXD_OUT,
+           input        PS2_CLK,
+           input        PS2_DATA,
            output       VGA_HS,
            output       VGA_VS,
            output [3:0] VGA_R,
@@ -31,12 +33,14 @@ module TinyBASICVideo(
    topEntity u_topEntity
      (.CLK_25MHZ(CLK_25MHZ),
       .RESET(!CLK_LOCKED),
+      .RX(UART_TXD_IN),
+      .PS2_CLK(PS2_CLK),
+      .PS2_DATA(PS2_DATA),
       .VGA_HSYNC(VGA_HS),
       .VGA_VSYNC(VGA_VS),
       .VGA_RED(VGA_RED_FULL),
       .VGA_GREEN(VGA_GREEN_FULL),
-      .VGA_BLUE(VGA_BLUE_FULL),
-      .RX(UART_TXD_IN)
+      .VGA_BLUE(VGA_BLUE_FULL)
       );
 
 endmodule
