@@ -18,8 +18,8 @@ import Data.Char (ord)
 createDomain vSystem{vName="Dom25", vPeriod = hzToPeriod 25_175_000}
 
 -- TODO: make these parameters
-type TextWidth = 32
-type TextHeight = 16
+type TextWidth = 64
+type TextHeight = 40
 type FontWidth = 8
 type FontHeight = 8
 type ScreenWidth = TextWidth * FontWidth
@@ -68,7 +68,6 @@ video (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb)
     frameEnd = isFalling False (isJust <$> vgaY)
 
     visible = fromSignal $ isJust <$> charX .&&. isJust <$> charY
-
     newChar = fromSignal $ charX ./=. register Nothing charX
 
     charAddr = do
@@ -81,16 +80,17 @@ video (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb)
     charLoad =
         enable (delayI False newChar) $
         delayedRam (blockRam1 ClearOnReset (SNat @(TextWidth * TextHeight)) 0)
-               (maybe (0 :: Unsigned 9) bitCoerce <$> charAddr)
+               (maybe (0 :: Unsigned (CLog 2 TextHeight + CLog 2 TextWidth)) bitCoerce <$> charAddr)
                (fmap (\(a, d) -> (bitCoerce a, d)) <$> w)
 
     glyphAddr = liftA2 (,) <$> charLoad <*> delayI Nothing (fromSignal glyphY)
     glyphLoad = mux (delayI False $ isNothing <$> glyphAddr) (pure Nothing) $
                 Just <$> fontRom (fromMaybe (0,0) <$> glyphAddr)
 
+    frame = pure (0x30, 0x30, 0x30)
     fg = pure maxBound
     bg = pure minBound
-    rgb = mux (not <$> delayI False visible) bg $
+    rgb = mux (not <$> delayI False visible) frame $
           mux (bitToBool <$> pixel) fg bg
 
     newPixel = fromSignal $ glyphX ./=. register Nothing glyphX
@@ -102,11 +102,8 @@ video (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb)
     pixel :: DSignal Dom25 3 Bit
     pixel = lsb <$> row
 
-    (x, _) = scale @ScreenWidth (SNat @2) . center $ vgaX
-    (charX, glyphX) = scale @TextWidth (SNat @FontWidth) x
-
-    (y, _) = scale @ScreenHeight (SNat @2) . center $ vgaY
-    (charY, glyphY) = scale @TextHeight (SNat @FontHeight) y
+    (charX, glyphX) = scale @TextWidth (SNat @FontWidth) . center $ vgaX
+    (charY, glyphY) = scale @TextHeight (SNat @FontHeight) . center $ vgaY
 
 fontRom :: (HiddenClockResetEnable dom) => DSignal dom n (Unsigned 8, Index 8) -> DSignal dom (n + 1) (Unsigned 8)
 fontRom = delayedRom $ fmap unpack . romFilePow2 "font.bin" . fmap toAddr
