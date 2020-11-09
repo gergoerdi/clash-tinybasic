@@ -83,7 +83,13 @@ executables:
       - stm
 
   tinybasic-intel8080-video:
-    main: intel8080/verilator.hs
+    main: Intel8080/verilator.hs
+    dependencies:
+      - retroclash-sim
+      - text
+      - lens
+      - sdl2
+      - monad-loops
     verbatim:
       x-clashilator-top-is: Intel8080.VideoBoard
       x-clashilator-clock: CLK_25MHZ
