@@ -6,7 +6,7 @@ import Clash.Annotations.TH
 import Hardware.Intel8080 hiding (ShiftRotate(..))
 import Hardware.Intel8080.CPU
 import Hardware.ACIA
-import Hardware.Video
+import Hardware.Video.Console
 
 import RetroClash.Utils
 import RetroClash.CPU

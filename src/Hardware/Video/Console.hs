@@ -1,7 +1,7 @@
 {-# LANGUAGE NumericUnderscores, RecordWildCards, TypeApplications #-}
 {-# LANGUAGE ViewPatterns, LambdaCase #-}
 {-# LANGUAGE ApplicativeDo #-}
-module Hardware.Video where
+module Hardware.Video.Console where
 
 import Clash.Prelude
 import RetroClash.Utils
