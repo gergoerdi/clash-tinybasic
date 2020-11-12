@@ -3,6 +3,7 @@ import Clash.Prelude hiding ((^), lift)
 
 import Hardware.Intel8080
 import Hardware.Intel8080.Model
+import Hardware.TinyBASIC.Sim
 
 import Control.Monad.State
 import Control.Monad.Reader
@@ -11,35 +12,21 @@ import Data.Maybe
 import Data.Array.IO
 import qualified Data.List as L
 import qualified Data.ByteString as BS
-import Data.Foldable (traverse_)
 
 import Text.Printf
 import Data.Char (chr, ord, isPrint)
 import System.Terminal
-import Control.Concurrent.STM
 import System.Exit
 
 import Paths_tinybasic
 
-sampleKey :: (MonadInput m, MonadPrinter m) => MaybeT m (Maybe Value)
-sampleKey = do
-    lift flush
-    ev <- MaybeT $ awaitWith $ \int ev -> msum
-        [ Nothing <$ int
-        , Just . Just <$> ev
-        , Just Nothing <$ return ()
-        ]
-    return $ case ev of
-        Just (KeyEvent (CharKey c) mods) | mods == mempty -> Just $ fromIntegral . ord $ c
-        Just (KeyEvent EnterKey _) -> Just 0x0d
-        _ -> Nothing
-
 main :: IO ()
 main = do
+    (arr :: IOArray Addr Value) <- newArray (minBound, maxBound) 0x00
+
     romFile <- getDataFileName "image/intel8080/alpha-basic1000.a80.com"
-    bs <- BS.unpack <$> BS.readFile romFile
-    let memL = L.take (2 ^ 16) $ bs <> L.repeat 0x00
-    (arr :: IOArray Addr Value) <- newListArray (minBound, maxBound) (fromIntegral <$> memL)
+    bs <- fmap fromIntegral . BS.unpack <$> BS.readFile romFile
+    zipWithM_ (writeArray arr) [0x0000..] bs
 
     let verbose = False
 
