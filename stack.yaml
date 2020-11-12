@@ -14,6 +14,7 @@ extra-deps:
 
 packages:
   - retroclash-lib
+  - retroclash-sim
   - clash-shake
   - clash-intel8080
   - .

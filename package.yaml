@@ -75,3 +75,10 @@ executables:
     dependencies:
       - terminal
       - stm
+
+  tinybasic-intel8080-sim:
+    main: intel8080/sim.hs
+    dependencies:
+      - retroclash-sim
+      - terminal
+      - stm

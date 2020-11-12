@@ -7,7 +7,7 @@ import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
 
 import Text.Printf
-import Data.Char (ord)
+import Data.Char (ord, chr, isPrint)
 import System.Terminal
 import Control.Concurrent.STM
 
@@ -23,3 +23,11 @@ sampleKey = do
         Just (KeyEvent (CharKey c) mods) | mods == mempty -> Just $ fromIntegral . ord $ c
         Just (KeyEvent EnterKey _) -> Just 0x0d
         _ -> Nothing
+
+printByte :: (MonadPrinter m) => Unsigned 8 -> m ()
+printByte val = case val of
+    0x0d -> putStringLn ""
+    _ | isPrint c -> putChar c >> flush
+      | otherwise -> return ()
+  where
+    c = chr . fromIntegral $ val
