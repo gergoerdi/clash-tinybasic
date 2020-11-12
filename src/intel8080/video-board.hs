@@ -13,7 +13,6 @@ import RetroClash.CPU
 import RetroClash.Clock
 import RetroClash.Port
 import RetroClash.Memory
-import RetroClash.SerialRx
 import RetroClash.VGA
 import RetroClash.PS2
 import RetroClash.PS2.ASCII
@@ -27,12 +26,11 @@ import Data.Traversable
 topEntity
     :: "CLK_25MHZ" ::: Clock Dom25
     -> "RESET"     ::: Reset Dom25
-    -> "RX"        ::: Signal Dom25 Bit
     -> "PS2"       ::: PS2 Dom25
     -> "VGA"       ::: VGAOut Dom25 8 8 8
 topEntity = withEnableGen board
   where
-    board rx ps2 = vga
+    board ps2 = vga
       where
         (frameEnd, vga) = video cursor vidWrite
         (vidReady, cursor, vidWrite) = screenEditor outByte
@@ -41,7 +39,6 @@ topEntity = withEnableGen board
 
         interruptRequest = pure False
 
-        -- inByte = fmap unpack <$> serialRx @8 (SNat @9600) rx
         inByte = keyboard ps2
 
         (dataIn, (outByte, ())) = memoryMap _addrOut _dataOut $ ports <||> mem
