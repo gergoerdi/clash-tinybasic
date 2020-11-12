@@ -16,7 +16,7 @@ logicBoard
     => Signal dom (Maybe (Unsigned 8)) -> Signal dom Bool -> Signal dom (Maybe (Unsigned 8))
 logicBoard inByte outReady = outByte
   where
-    cpuOut@CPUOut{..} = mealyCPU (initState 0x0000) defaultOut cpu CPUIn{..}
+    cpuOut@CPUOut{..} = mealyCPU (initState 0x1000) defaultOut cpu CPUIn{..}
 
     interruptRequest = pure False
 
@@ -27,5 +27,5 @@ logicBoard inByte outReady = outByte
             return outByte
 
         mem = do
-            mask @15 0x0000 $ readOnly $ fmap unpack . romFilePow2 "_build/intel8080/image.bin"
+            mask @12 0x1000 $ readOnly $ fmap unpack . romFilePow2 "_build/intel8080/image.bin"
             mask @15 0x8000 $ readWrite $ blockRamU ClearOnReset (SNat @0x8000) (const 0)

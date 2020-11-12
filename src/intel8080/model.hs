@@ -26,7 +26,7 @@ main = do
 
     romFile <- getDataFileName "image/intel8080/alpha-basic1000.a80.com"
     bs <- fmap fromIntegral . BS.unpack <$> BS.readFile romFile
-    zipWithM_ (writeArray arr) [0x0000..] bs
+    zipWithM_ (writeArray arr) [0x1000..] bs
 
     let verbose = False
 

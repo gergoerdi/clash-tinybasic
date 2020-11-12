@@ -33,7 +33,7 @@ intel8080 = do
     let binFile = outDir </> "intel8080/image.bin"
     binFile %> \out -> do
         let imageFile = "image/intel8080/alpha-basic1000.a80.com"
-        binImage (Just $ 0x8000) imageFile out
+        binImage (Just $ 0x1000) imageFile out
 
     do
         let targetDir = outDir </> "intel8080/video"

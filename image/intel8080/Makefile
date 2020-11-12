@@ -1,5 +1,5 @@
 all: alpha-basic1000.a80.com
 
 %.com: %.hex
-	srec_cat $< -intel -o $@ -binary
+	objcopy --gap-fill 0 --input-target=ihex --output-target=binary $< $@
 
