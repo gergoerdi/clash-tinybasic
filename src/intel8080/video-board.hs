@@ -4,24 +4,17 @@ import Clash.Prelude hiding (rom)
 import Clash.Annotations.TH
 
 import Hardware.Intel8080 hiding (ShiftRotate(..))
-import Hardware.Intel8080.CPU
-import Hardware.ACIA
+import Hardware.TinyBASIC.Intel8080
 import Hardware.Video.Console
 
 import RetroClash.Utils
-import RetroClash.CPU
 import RetroClash.Clock
-import RetroClash.Port
-import RetroClash.Memory
 import RetroClash.VGA
 import RetroClash.PS2
 import RetroClash.PS2.ASCII
 
-import Data.Maybe
 import Control.Monad
-import Control.Monad.Trans.Maybe
 import Control.Lens
-import Data.Traversable
 
 topEntity
     :: "CLK_25MHZ" ::: Clock Dom25
@@ -35,21 +28,8 @@ topEntity = withEnableGen board
         (frameEnd, vga) = video cursor vidWrite
         (vidReady, cursor, vidWrite) = screenEditor outByte
 
-        cpuOut@CPUOut{..} = mealyCPU (initState 0x0000) defaultOut cpu CPUIn{..}
-
-        interruptRequest = pure False
-
+        outByte = logicBoard inByte vidReady
         inByte = keyboard ps2
-
-        (dataIn, (outByte, ())) = memoryMap _addrOut _dataOut $ ports <||> mem
-          where
-            ports = do
-                tx <- mask 0xde $ port $ acia inByte vidReady
-                return tx
-
-            mem = do
-                mask @15 0x0000 $ readOnly $ fmap unpack . romFilePow2 "_build/intel8080/image.bin"
-                mask @15 0x8000 $ readWrite $ blockRamU ClearOnReset (SNat @0x8000) (const 0)
 
 keyboard
     :: (HiddenClockResetEnable dom, KnownNat (ClockDivider dom (Microseconds 1)))
