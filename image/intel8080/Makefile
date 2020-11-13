@@ -1,5 +1,5 @@
-all: alpha-basic1000.a80.com
+all: tinybasic-2.0.bin
 
-%.com: %.hex
+%.bin: %.hex
 	objcopy --gap-fill 0 --input-target=ihex --output-target=binary $< $@
 

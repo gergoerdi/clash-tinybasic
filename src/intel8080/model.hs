@@ -24,9 +24,9 @@ main :: IO ()
 main = do
     (arr :: IOArray Addr Value) <- newArray (minBound, maxBound) 0x00
 
-    romFile <- getDataFileName "image/intel8080/alpha-basic1000.a80.com"
+    romFile <- getDataFileName "image/intel8080/tinybasic-2.0.bin"
     bs <- fmap fromIntegral . BS.unpack <$> BS.readFile romFile
-    zipWithM_ (writeArray arr) [0x1000..] bs
+    zipWithM_ (writeArray arr) [0x0000..] bs
 
     let verbose = False
 
@@ -84,10 +84,10 @@ main = do
                 , inPort = inPort
                 , outPort = outPort
                 }
-            s = mkState 0x0100
+            s = mkState 0x0000
         execStateT (runSoftCPU w s) Nothing
 
     return ()
   where
-    statusPort = 0xde
-    dataPort = 0xdf
+    statusPort = 0x10
+    dataPort = 0x11

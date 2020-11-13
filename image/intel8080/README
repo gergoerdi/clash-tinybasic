@@ -1,1 +1,15 @@
-Pre-built Intel 8080 Tiny BASIC from https://github.com/omenmicro/alpha/tree/master/sw/BASIC
+*************************************************************
+ 
+                 TINY BASIC FOR INTEL 8080
+                       VERSION 2.0
+                     BY LI-CHEN WANG
+                  MODIFIED AND TRANSLATED
+                    TO INTEL MNEMONICS
+                     BY ROGER RAUSKOLB
+                      10 OCTOBER,1976
+                        @COPYLEFT
+                   ALL WRONGS RESERVED
+ 
+*************************************************************
+
+From https://www.autometer.de/unix4fun/z80pack/ftp/altair

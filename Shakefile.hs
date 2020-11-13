@@ -32,8 +32,8 @@ intel8080 :: Rules ()
 intel8080 = do
     let binFile = outDir </> "intel8080/image.bin"
     binFile %> \out -> do
-        let imageFile = "image/intel8080/alpha-basic1000.a80.com"
-        binImage (Just $ 0x1000) imageFile out
+        let imageFile = "image/intel8080/tinybasic-2.0.bin"
+        binImage (Just $ 0x0800) imageFile out
 
     do
         let targetDir = outDir </> "intel8080/video"
