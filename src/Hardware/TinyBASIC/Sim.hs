@@ -14,15 +14,18 @@ import Control.Concurrent.STM
 sampleKey :: (MonadInput m, MonadPrinter m) => MaybeT m (Maybe (Unsigned 8))
 sampleKey = do
     lift flush
-    ev <- MaybeT $ awaitWith $ \int ev -> msum
-        [ Nothing <$ int
-        , Just . Just <$> ev
-        , Just Nothing <$ return ()
+    ev <- lift $ awaitWith $ \int ev -> msum
+        [ Just (KeyEvent (CharKey 'C') ctrlKey) <$ int
+        , Just <$> ev
+        , Nothing <$ return ()
         ]
-    return $ case ev of
-        Just (KeyEvent (CharKey c) mods) | mods == mempty -> Just $ fromIntegral . ord $ c
-        Just (KeyEvent EnterKey _) -> Just 0x0d
-        _ -> Nothing
+    case ev of
+        Just (KeyEvent key mods)
+          | CharKey c <- key, mods == mempty -> return $ Just $ fromIntegral . ord $ c
+          | CharKey 'C' <- key, mods .&. ctrlKey /= mempty -> return $ Just 0x03
+          | CharKey 'D' <- key, mods .&. ctrlKey /= mempty -> mzero
+          | EnterKey <- key -> return $ Just 0x0d
+        _ -> return Nothing
 
 printByte :: (MonadPrinter m) => Unsigned 8 -> m ()
 printByte val = case val of
