@@ -16,7 +16,7 @@ logicBoard
     => Signal dom (Maybe (Unsigned 8)) -> Signal dom Bool -> Signal dom (Maybe (Unsigned 8))
 logicBoard inByte outReady = outByte
   where
-    cpuOut@CPUOut{..} = mealyCPU (initState 0x0000) defaultOut cpu CPUIn{..}
+    CPUOut{..} = intel8080 CPUIn{..}
 
     interruptRequest = pure False
 
