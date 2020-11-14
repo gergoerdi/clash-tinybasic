@@ -15,13 +15,14 @@ acia
     -> Signal dom Bool
     -> Signal dom (Maybe (PortCommand (Unsigned 1) (Unsigned 8)))
     -> (Signal dom (Maybe (Unsigned 8)), Signal dom (Maybe (Unsigned 8)))
-acia inByte outReady cmd = (portOut, outByte)
+acia inByte outReady cmd = mealyStateB step Nothing (inByte, outReady, cmd)
   where
-    (portOut, outByte) = mealyStateB step Nothing (inByte, outReady, cmd)
-
     step (inByte, outReady, cmd) = do
         traverse (put . Just) inByte
         case cmd of
+            Nothing ->
+                return (Nothing, Nothing)
+
             Just (ReadPort 0x0) -> do
                 inReady <- isJust <$> get
                 let val = (if inReady then 0x01 else 0x00) .|.
@@ -35,5 +36,3 @@ acia inByte outReady cmd = (portOut, outByte)
                 return (Just $ fromMaybe 0x00 queued, Nothing)
             Just (WritePort 0x1 x) -> do
                 return (Just 0x00, Just x)
-
-            _ -> return (Nothing, Nothing)
