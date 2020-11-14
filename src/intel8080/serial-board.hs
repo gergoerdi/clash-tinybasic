@@ -22,10 +22,9 @@ topEntity = withEnableGen board
   where
     board rx = tx
       where
-        outByte = logicBoard inByte txDone
+        outByte = logicBoard inByte outReady
 
-        inByte = fmap unpack <$> serialRx @8 (SNat @9600) rx
-        outFifo = fifo outByte txDone
-        (tx, txDone) = serialTx @8 (SNat @9600) (fmap pack <$> outFifo)
+        inByte = fmap unpack <$> serialRx (SNat @9600) rx
+        (tx, outReady) = serialTx (SNat @9600) (fmap pack <$> outByte)
 
 makeTopEntity 'topEntity
