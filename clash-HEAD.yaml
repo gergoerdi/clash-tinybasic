@@ -1,5 +1,5 @@
 name: clash-HEAD
-resolver: lts-16.9
+resolver: lts-16.21
 
 packages:
   - github: clash-lang/clash-compiler
@@ -10,6 +10,7 @@ packages:
       - clash-lib
 
   - concurrent-supply-0.1.8
+  - ghc-typelits-extra-0.4.1
 
 flags:
     clash-prelude:

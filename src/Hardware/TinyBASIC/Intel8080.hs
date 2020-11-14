@@ -22,8 +22,8 @@ logicBoard inByte outReady = outByte
 
     (dataIn, outByte) = memoryMap _addrOut _dataOut $ do
         matchRight $ do
-            mask @11 0x0000 $ readOnly $ fmap unpack . romFilePow2 "_build/intel8080/image.bin"
-            mask @11 0x0800 $ readWrite $ blockRamU ClearOnReset (SNat @0x0800) (const 0)
-            mask @12 0x1000 $ readWrite $ blockRamU ClearOnReset (SNat @0x1000) (const 0)
+            mask 0x0000 $ romFromFile (SNat @0x0800) "_build/intel8080/image.bin"
+            mask 0x0800 $ ram0 (SNat @0x0800)
+            mask 0x1000 $ ram0 (SNat @0x1000)
         matchLeft $ do
             mask 0x10 $ port $ acia inByte outReady

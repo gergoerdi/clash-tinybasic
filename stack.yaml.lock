@@ -51,6 +51,13 @@ packages:
   original:
     hackage: concurrent-supply-0.1.8
 - completed:
+    hackage: ghc-typelits-extra-0.4.1@sha256:ea3f504e032b8e4fa4d5ae1099fce7eeedb49315b20bf2ccd01f6f2ee668cf4d,4815
+    pantry-tree:
+      size: 682
+      sha256: 8e5d285c572712051eb080b4e067af9a8300be1b0c988404e9fa341c2fa68c84
+  original:
+    hackage: ghc-typelits-extra-0.4.1
+- completed:
     hackage: barbies-2.0.1.0@sha256:289c0ab2a8477dc09d70653f437b7b83caa8969cc007c866bc52606121cce3c1,4407
     pantry-tree:
       size: 4426
@@ -93,7 +100,7 @@ packages:
     url: https://github.com/emilypi/smash/archive/bd3ae30bdfef3f92ce5575a1ee10228830afa11b.tar.gz
 snapshots:
 - completed:
-    size: 532380
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/9.yaml
-    sha256: 14a7cec114424e4286adde73364438927a553ed248cc50f069a30a67e3ee1e69
-  original: lts-16.9
+    size: 532413
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/21.yaml
+    sha256: 7b5cac89352fa4a88606dc6cb250aee9291f21e2e988d464065f5aa51f5de33d
+  original: lts-16.21
