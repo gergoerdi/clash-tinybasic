@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Hardware.ACIA where
 
 import Clash.Prelude
@@ -7,6 +8,9 @@ import RetroClash.Port
 
 import Data.Maybe
 import Control.Monad.State
+import Control.Monad.Writer
+import Data.Traversable (for)
+import Control.Arrow (second)
 
 -- Asynchronous Communications Interface Adapter
 acia
@@ -17,22 +21,26 @@ acia
     -> (Signal dom (Maybe (Unsigned 8)), Signal dom (Maybe (Unsigned 8)))
 acia inByte outReady cmd = mealyStateB step Nothing (inByte, outReady, cmd)
   where
-    step (inByte, outReady, cmd) = do
+    step (inByte, outReady, cmd) = fmap (second getFirst) . runWriterT $ do
         traverse (put . Just) inByte
-        case cmd of
-            Nothing ->
-                return (Nothing, Nothing)
-
-            Just (ReadPort 0x0) -> do
+        for cmd $ \case
+            ReadPort 0x0 -> do
                 inReady <- isJust <$> get
-                let val = (if inReady then 0x01 else 0x00) .|.
-                          (if outReady then 0x02 else 0x00)
-                return (Just val, Nothing)
-            Just (WritePort 0x0 x) -> do
-                return (Just 0x00, Nothing)
-
-            Just (ReadPort 0x1) -> do
+                return $ bitCoerce $
+                    False :>      -- TODO: IRQ
+                    False :>      -- TODO: parity error
+                    False :>      -- TODO: receiver overrun
+                    False :>      -- TODO: framing error
+                    False :>      -- TODO: CTS
+                    False :>      -- TODO: DCD
+                    outReady :>
+                    inReady :>
+                    Nil
+            WritePort 0x0 x -> do
+                return 0x00
+            ReadPort 0x1 -> do
                 queued <- get <* put Nothing
-                return (Just $ fromMaybe 0x00 queued, Nothing)
-            Just (WritePort 0x1 x) -> do
-                return (Just 0x00, Just x)
+                return $ fromMaybe 0x00 queued
+            WritePort 0x1 x -> do
+                tell $ pure x
+                return 0x00
