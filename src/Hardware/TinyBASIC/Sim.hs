@@ -9,10 +9,10 @@ import Control.Monad.Trans.Maybe
 import Data.Char (ord, chr, isPrint)
 import System.Terminal
 
-sampleKey :: (MonadInput m, MonadPrinter m) => MaybeT m (Maybe (Unsigned 8))
+sampleKey :: (MonadInput (TerminalT t m), MonadPrinter (TerminalT t m), MonadPlus m) => TerminalT t m (Maybe (Unsigned 8))
 sampleKey = do
-    lift flush
-    ev <- lift $ awaitWith $ \int ev -> msum
+    flush
+    ev <- awaitWith $ \int ev -> msum
         [ Just (KeyEvent (CharKey 'C') ctrlKey) <$ int
         , Just <$> ev
         , Nothing <$ return ()
@@ -21,7 +21,7 @@ sampleKey = do
         Just (KeyEvent key mods)
           | CharKey c <- key, mods == mempty -> return $ Just $ fromIntegral . ord $ c
           | CharKey 'C' <- key, mods .&. ctrlKey /= mempty -> return $ Just 0x03
-          | CharKey 'D' <- key, mods .&. ctrlKey /= mempty -> mzero
+          | CharKey 'D' <- key, mods .&. ctrlKey /= mempty -> lift mzero
           | EnterKey <- key -> return $ Just 0x0d
         _ -> return Nothing
 

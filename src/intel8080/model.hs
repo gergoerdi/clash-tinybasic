@@ -16,7 +16,6 @@ import qualified Data.ByteString as BS
 import Text.Printf
 import Data.Char (chr, ord, isPrint)
 import System.Terminal
-import System.Exit
 
 import Paths_tinybasic
 
@@ -30,12 +29,11 @@ main = do
 
     let verbose = False
 
-    let getKey = lift $ maybe (liftIO exitSuccess) return =<< runMaybeT sampleKey
-        checkInput = do
+    let checkInput = do
             queued <- get
             case queued of
                 Just prev -> return ()
-                Nothing -> put =<< getKey
+                Nothing -> put =<< lift sampleKey
             gets isJust
         getInput = get <* put Nothing
 
@@ -77,7 +75,7 @@ main = do
           | port == dataPort = putData
           | otherwise = \_ -> return 0x00
 
-    withTerminal $ runTerminalT $ do
+    runMaybeT $ withTerminal $ runTerminalT $ do
         let w = World
                 { readMem = liftIO . readArray arr
                 , writeMem = \addr x -> liftIO $ writeArray arr addr x

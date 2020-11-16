@@ -14,8 +14,8 @@ main :: IO ()
 main = do
     sim <- simulateIO_ @System (uncurry logicBoard . unbundle) (Nothing, True)
 
-    withTerminal $ runTerminalT $ runMaybeT $ forever $ sim $ \outByte -> do
-        traverse_ (lift . printByte) outByte
+    runMaybeT $ withTerminal $ runTerminalT $ forever $ sim $ \outByte -> do
+        traverse_ printByte outByte
         inByte <- sampleKey
         return (inByte, True)
     return ()
