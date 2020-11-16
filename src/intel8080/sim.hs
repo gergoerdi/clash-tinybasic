@@ -1,5 +1,4 @@
-import Prelude ((^))
-import Clash.Prelude hiding ((^), lift)
+import Clash.Prelude hiding (lift)
 import RetroClash.Sim.IO
 import Hardware.TinyBASIC.Sim
 
@@ -9,11 +8,7 @@ import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
 import Data.Foldable (traverse_)
-
-import Text.Printf
-import Data.Char (chr, isPrint)
 import System.Terminal
-import System.Exit
 
 main :: IO ()
 main = do

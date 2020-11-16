@@ -6,10 +6,8 @@ import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
 
-import Text.Printf
 import Data.Char (ord, chr, isPrint)
 import System.Terminal
-import Control.Concurrent.STM
 
 sampleKey :: (MonadInput m, MonadPrinter m) => MaybeT m (Maybe (Unsigned 8))
 sampleKey = do
