@@ -1,4 +1,4 @@
-module TinyBASIC(
+module TinyBASICSerial(
            input        CLK_32MHZ,
            input        RX,
            output       TX

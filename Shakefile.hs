@@ -47,7 +47,7 @@ intel8080 = do
             need [binFile, fontFile]
 
         forM_ targets $ \(name, synth, _) -> do
-            SynthKit{..} <- synth kit (targetDir </> name </> "synth") ("target" </> name) "TinyBASICVideo"
+            SynthKit{..} <- synth kit (targetDir </> name </> "synth") ("target" </> name </> "video") "TinyBASICVideo"
 
             mapM_ (uncurry $ nestedPhony ("intel8080/video" </> name)) $
               ("bitfile", need [bitfile]):
@@ -67,7 +67,7 @@ intel8080 = do
             , "-D__NATIVE_CLOCK__=" <> show clock
             ] $
             need [binFile]
-        SynthKit{..} <- synth kit (targetDir </> "synth") ("target" </> name) "TinyBASICSerial"
+        SynthKit{..} <- synth kit (targetDir </> "synth") ("target" </> name </> "serial") "TinyBASICSerial"
 
         mapM_ (uncurry $ nestedPhony ("intel8080/serial" </> name)) $
           ("clashi", clash ["--interactive", "src/intel8080/serial-board.hs"]) :
