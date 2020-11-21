@@ -12,7 +12,7 @@ import RetroClash.Clock
 import Data.Maybe
 
 import Control.Monad.State
-import Data.Char (ord)
+import Control.Arrow (first)
 
 -- | 25 MHz clock, needed for the VGA mode we use.
 createDomain vSystem{vName="Dom25", vPeriod = hzToPeriod 25_175_000}
@@ -82,24 +82,15 @@ video (fromSignal -> cursor) (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb
         cnt = regEn (0 :: Index 30) frameEnd $ nextIdx <$> cnt
 
     visible = fromSignal $ isJust <$> charX .&&. isJust <$> charY
-    newChar = fromSignal $ charX ./=. register Nothing charX
-
-    charAddr = do
-        new <- newChar
-        yx <- charYX
-        pure $ do
-            guard new
-            yx
+    newChar = fromSignal $ changed Nothing charX
 
     charLoad =
-        enable (delayI False newChar) $
         delayedRam (blockRam1 ClearOnReset (SNat @(TextWidth * TextHeight)) 0)
-               (maybe (0 :: Unsigned (BitSize TextCoord)) bitCoerce <$> charAddr)
-               (fmap (\(a, d) -> (bitCoerce a, d)) <$> w)
+            (maybe 0 pack <$> charYX)
+            (fmap (first pack) <$> w)
 
-    glyphAddr = liftA2 (,) <$> charLoad <*> delayI Nothing (fromSignal glyphY)
-    glyphLoad = mux (delayI False $ isNothing <$> glyphAddr) (pure Nothing) $
-                Just <$> fontRom (fromMaybe (0,0) <$> glyphAddr)
+    glyphAddr = (,) <$> charLoad <*> (fromMaybe 0 <$> delayI Nothing (fromSignal glyphY))
+    glyphLoad = fontRom glyphAddr
 
     frame = pure (0x30, 0x30, 0x30)
     fg = pure maxBound
@@ -112,9 +103,9 @@ video (fromSignal -> cursor) (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb
     rgb = mux (not <$> delayI False visible) frame $
           mux (bitToBool <$> pixel) fg' bg'
 
-    newPixel = fromSignal $ glyphX ./=. register Nothing glyphX
+    newPixel = fromSignal $ changed Nothing glyphX
     row = delayedRegister 0x00 $ \row ->
-      mux (isJust <$> glyphLoad) (fromJust <$> glyphLoad) $
+      mux (delayI False newChar) glyphLoad $
       mux (delayI False newPixel) ((`shiftR` 1) <$> row) $
       row
 
