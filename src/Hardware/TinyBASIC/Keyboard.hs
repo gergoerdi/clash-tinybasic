@@ -8,38 +8,20 @@ import RetroClash.Clock
 import RetroClash.PS2
 import RetroClash.PS2.ASCII
 
-import Control.Monad
-import Control.Lens
-
 keyboard
     :: (HiddenClockResetEnable dom, KnownNat (ClockDivider dom (Microseconds 1)))
     => PS2 dom -> Signal dom (Maybe (Unsigned 8))
-keyboard ps2 = fmap extend <$> decoded
+keyboard ps2 = fmap extend <$> (toChar <$> shift <*> ctrl <*> sc)
   where
-    inScanCode = parseScanCode . decodePS2 . samplePS2 $ ps2
-    modState = mooreState updateMods id (False, False) inScanCode
-      where
-        updateMods sc = forM_ (modEvent =<< sc) $ \(ev, mod) -> do
-            let newState = case ev of
-                    KeyPress -> True
-                    KeyRelease -> False
-            case mod of
-                Shift -> _1 .= newState
-                Ctrl -> _2 .= newState
-                _ -> return ()
+    sc = parseScanCode . decodePS2 . samplePS2 $ ps2
 
-        modEvent (ScanCode ev kc) = do
-            (mod, side) <- modMap kc
-            return (ev, mod)
+    shift = keyState 0x012 sc .||. keyState 0x059 sc
+    ctrl = keyState 0x014 sc .||. keyState 0x114 sc
 
-    rawChar = ((asciiMap <=< keyPress) =<<) <$> inScanCode
-    decoded = do
-        ~(shift, ctrl) <- modState
-        c <- rawChar
-        pure $ case (ctrl, c) of
-            (True, Just 0x63) -> Just 0x03 -- Ctrl-C
-            (False, Just c) -> Just $ shiftASCII shift c
-            _ -> Nothing
+    toChar shift ctrl sc = case asciiMap =<< keyPress =<< sc of
+        Just 0x63 | ctrl -> Just 0x03 -- Ctrl-C
+        Just c | not ctrl -> Just $ shiftASCII shift c
+        _ -> Nothing
 
 shiftASCII :: Bool -> Unsigned 7 -> Unsigned 7
 shiftASCII shift c
