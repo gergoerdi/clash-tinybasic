@@ -48,7 +48,6 @@ default-extensions:
   - MagicHash
   - MonoLocalBinds
   - NoImplicitPrelude
-  - NoMonomorphismRestriction
   - NoStarIsType
   - NoStrictData
   - NoStrict

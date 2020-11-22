@@ -18,12 +18,12 @@ createDomain vSystem{vName="Dom25", vPeriod = hzToPeriod 25_175_000}
 -- TODO: make these parameters
 type TextWidth = 72
 type TextHeight = 50
+type TextSize = TextWidth * TextHeight
+type TextAddr = Index TextSize
+type TextCoord = (Index TextWidth, Index TextHeight)
+
 type FontWidth = 8
 type FontHeight = 8
-type ScreenWidth = TextWidth * FontWidth
-type ScreenHeight = TextHeight * FontHeight
-type TextAddr = Index (TextHeight * TextWidth)
-type TextCoord = (Index TextWidth, Index TextHeight)
 
 data EditorState
     = Ready (Index TextWidth) (Index TextHeight) TextAddr
@@ -81,44 +81,54 @@ video (fromSignal -> cursor) (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb
     (charY, glyphY) = scale @TextHeight (SNat @FontHeight) . center $ vgaY
     charXY = fromSignal $ liftA2 (,) <$> charX <*> charY
 
-    frame = pure (0x30, 0x30, 0x30)
-    fg = pure maxBound
-    bg = pure minBound
+    visible = fromSignal $ isJust <$> charX .&&. isJust <$> charY
 
-    isFrame = isNothing <$> charXY
+    (newLine, lineAddr) = addressBy (snatToNum (SNat @TextWidth)) charY
+    (newChar, charOffset) = addressBy 1 charX
+
+    charAddr = lineAddr + charOffset
+    charWrite = delayI Nothing w
+    charLoad = delayedRam (blockRam1 ClearOnReset (SNat @TextSize) 0) charAddr charWrite
+
+    glyphLoad = fontRom charLoad (fromMaybe 0 <$> delayI Nothing (fromSignal glyphY))
+    newCol = fromSignal $ changed Nothing glyphX
+    glyphRow = delayedRegister 0x00 $ \glyphRow ->
+      mux (delayI False newChar) glyphLoad $
+      mux (delayI False newCol) ((`shiftL` 1) <$> glyphRow) $
+      glyphRow
+
+    pixel = enable (delayI False visible) $ msb <$> glyphRow
+
     cursorOn = fromSignal $ riseEveryWhen (SNat @30) frameEnd
     isCursor = cursorOn .&&. charXY .==. (Just <$> cursor)
 
-    rgb =
-        mux (delayI False isFrame) frame $
-        mux (delayI False isCursor) (mux pixel bg fg) $
-        mux pixel fg bg
+    pixel' = mux (delayI False isCursor) (fmap complement <$> pixel) pixel
+    rgb = maybe frame palette <$> pixel'
 
-    pixel = bitToBool . msb <$> glyphRow
+    frame = (0x30, 0x30, 0x30)
+    palette 0 = (0x00, 0x00, 0x00)
+    palette 1 = (0x33, 0xff, 0x33)
 
-    newLine = fromSignal $ changed Nothing charY
-    lineAddr = delayedRegister 0 $ \lineAddr ->
-        mux (delayI False . fromSignal $ charY .==. pure (Just 0)) 0 $
-        mux newLine (lineAddr + snatToNum (SNat @TextWidth)) $
-        lineAddr
-
-    newChar = fromSignal $ changed Nothing charX
-    charAddr = delayedRegister 0 $ \charAddr ->
-        mux (delayI False . fromSignal $ charX .==. pure (Just 0)) lineAddr $
-        mux (delayI False newChar) (charAddr + 1) $
-        charAddr
-
-    charWrite = delayI Nothing w
-    charLoad = delayedRam (blockRam1 ClearOnReset (SNat @(TextWidth * TextHeight)) 0) charAddr charWrite
-
-    glyphAddr = (,) <$> charLoad <*> (fromMaybe 0 <$> delayI Nothing (fromSignal glyphY))
-    glyphLoad = fontRom glyphAddr
-    glyphRow = delayedRegister 0x00 $ \glyphRow ->
-      mux (delayI False newChar) glyphLoad $
-      (`shiftL` 1) <$> glyphRow
-
-fontRom :: (HiddenClockResetEnable dom) => DSignal dom n (Unsigned 8, Index 8) -> DSignal dom (n + 1) (Unsigned 8)
-fontRom = delayedRom $ fmap unpack . romFilePow2 "font.bin" . fmap toAddr
+fontRom
+    :: (HiddenClockResetEnable dom)
+    => DSignal dom n (Unsigned 8)
+    -> DSignal dom n (Index FontHeight)
+    -> DSignal dom (n + 1) (Unsigned FontWidth)
+fontRom char row = delayedRom (fmap unpack . romFilePow2 "font.bin") $ toAddr <$> char <*> row
   where
-    toAddr :: (Unsigned 8, Index 8) -> Unsigned (8 + 3)
-    toAddr = bitCoerce
+    toAddr :: Unsigned 8 -> Index 8 -> Unsigned (8 + CLog 2 FontHeight)
+    toAddr char row = bitCoerce (char, row)
+
+addressBy
+    :: (HiddenClockResetEnable dom, NFDataX coord, NFDataX addr, Num coord, Eq coord, Num addr)
+    => addr
+    -> Signal dom (Maybe coord)
+    -> (DSignal dom 0 Bool, DSignal dom 1 addr)
+addressBy stride coord = (new, addr)
+  where
+    start = fromSignal $ coord .== Just 0
+    new = fromSignal $ changed Nothing coord
+    addr = delayedRegister 0 $ \addr ->
+        mux (delayI False start) 0 $
+        mux new (addr + pure stride) $
+        addr
