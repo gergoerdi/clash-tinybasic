@@ -77,44 +77,34 @@ video (fromSignal -> cursor) (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb
     VGADriver{..} = vgaDriver vga640x480at60
     frameEnd = isFalling False (isJust <$> vgaY)
 
-    showCursor = regEn True (isRising False $ cnt .==. 0) $ not <$> showCursor
-      where
-        cnt = regEn (0 :: Index 30) frameEnd $ nextIdx <$> cnt
-
-    visible = fromSignal $ isJust <$> charX .&&. isJust <$> charY
-    newChar = fromSignal $ changed Nothing charX
-
-    charLoad =
-        delayedRam (blockRam1 ClearOnReset (SNat @(TextWidth * TextHeight)) 0)
-            (maybe 0 pack <$> charYX)
-            (fmap (first pack) <$> w)
-
-    glyphAddr = (,) <$> charLoad <*> (fromMaybe 0 <$> delayI Nothing (fromSignal glyphY))
-    glyphLoad = fontRom glyphAddr
+    (charX, glyphX) = scale @TextWidth (SNat @FontWidth) . center $ vgaX
+    (charY, glyphY) = scale @TextHeight (SNat @FontHeight) . center $ vgaY
+    charYX = fromSignal $ liftA2 (,) <$> charY <*> charX
 
     frame = pure (0x30, 0x30, 0x30)
     fg = pure maxBound
     bg = pure minBound
 
-    (fg', bg') = (mux isCursor bg fg, mux isCursor fg bg)
-      where
-        isCursor = delayI False $ fromSignal showCursor .&&. charYX .==. (Just <$> cursor)
+    isFrame = isNothing <$> charYX
+    isCursor = fromSignal $ riseEveryWhen (SNat @30) frameEnd
 
-    rgb = mux (not <$> delayI False visible) frame $
-          mux (bitToBool <$> pixel) fg' bg'
+    rgb = mux (delayI False isFrame) frame $
+          mux (delayI False isCursor) (mux pixel bg fg) $
+          mux pixel fg bg
 
-    newPixel = fromSignal $ changed Nothing glyphX
-    row = delayedRegister 0x00 $ \row ->
+    pixel = bitToBool . msb <$> glyphRow
+
+    charAddr = maybe 0 pack <$> charYX
+    charWrite = fmap (first pack) <$> w
+    charLoad = delayedRam (blockRam1 ClearOnReset (SNat @(TextWidth * TextHeight)) 0) charAddr charWrite
+
+    newChar = fromSignal $ changed Nothing charX
+
+    glyphAddr = (,) <$> charLoad <*> (fromMaybe 0 <$> delayI Nothing (fromSignal glyphY))
+    glyphLoad = fontRom glyphAddr
+    glyphRow = delayedRegister 0x00 $ \glyphRow ->
       mux (delayI False newChar) glyphLoad $
-      mux (delayI False newPixel) ((`shiftR` 1) <$> row) $
-      row
-
-    pixel :: DSignal Dom25 3 Bit
-    pixel = lsb <$> row
-
-    (charX, glyphX) = scale @TextWidth (SNat @FontWidth) . center $ vgaX
-    (charY, glyphY) = scale @TextHeight (SNat @FontHeight) . center $ vgaY
-    charYX = fromSignal $ liftA2 (,) <$> charY <*> charX
+      (`shiftL` 1) <$> glyphRow
 
 fontRom :: (HiddenClockResetEnable dom) => DSignal dom n (Unsigned 8, Index 8) -> DSignal dom (n + 1) (Unsigned 8)
 fontRom = delayedRom $ fmap unpack . romFilePow2 "font.bin" . fmap toAddr
