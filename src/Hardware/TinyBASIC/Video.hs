@@ -65,13 +65,10 @@ screenEditor = mealyStateB step (Ready 0 0)
 video
     :: (HiddenClockResetEnable Dom25)
     => Signal Dom25 (Maybe (TextAddr, Unsigned 8))
-    -> ( Signal Dom25 Bool
-       , VGAOut Dom25 8 8 8
-       )
-video (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb)
+    -> VGAOut Dom25 8 8 8
+video (fromSignal -> w) = delayVGA vgaSync rgb
   where
     VGADriver{..} = vgaDriver vga640x480at60
-    frameEnd = isFalling False (isJust <$> vgaY)
 
     (charX, glyphX) = scale @TextWidth (SNat @FontWidth) . center $ vgaX
     (charY, glyphY) = scale @TextHeight (SNat @FontHeight) . center $ vgaY

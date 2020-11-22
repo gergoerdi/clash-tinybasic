@@ -19,7 +19,7 @@ topEntity = withEnableGen board
   where
     board ps2 = vga
       where
-        (frameEnd, vga) = video vidWrite
+        vga = video vidWrite
         (vidWrite, vidReady) = screenEditor outByte
 
         outByte = logicBoard inByte vidReady
