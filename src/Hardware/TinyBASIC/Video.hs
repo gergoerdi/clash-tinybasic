@@ -20,24 +20,22 @@ type TextWidth = 72
 type TextHeight = 50
 type TextSize = TextWidth * TextHeight
 type TextAddr = Index TextSize
-type TextCoord = (Index TextWidth, Index TextHeight)
 
 type FontWidth = 8
 type FontHeight = 8
 
 data EditorState
-    = Ready (Index TextHeight) TextAddr (Index TextWidth)
-    | Clear (Index TextHeight) TextAddr (Index TextWidth)
+    = Ready TextAddr (Index TextWidth)
+    | Clear TextAddr (Index TextWidth)
     deriving (Generic, NFDataX)
 
 screenEditor
     :: (HiddenClockResetEnable dom)
     => Signal dom (Maybe (Unsigned 8))
     -> ( Signal dom (Maybe (TextAddr, Unsigned 8))
-       , Signal dom TextCoord
        , Signal dom Bool
        )
-screenEditor = mealyStateB step (Ready 0 0 0)
+screenEditor = mealyStateB step (Ready 0 0)
   where
     base `offsetBy` x = base + fromIntegral x
     stride = snatToNum (SNat @TextWidth)
@@ -45,41 +43,40 @@ screenEditor = mealyStateB step (Ready 0 0 0)
 
     step chr = do
         write <- putChar chr
-        (cursor, ready) <- gets $ \case
-            Clear y base x -> ((x, y), False)
-            Ready y base x -> ((x, y), True)
-        return (write, cursor, ready)
+        ready <- gets $ \case
+            Clear _ _ -> False
+            Ready _ _ -> True
+        return (write, ready)
 
     putChar chr = get >>= \case
-        Clear y base x -> do
-            put $ maybe (Ready y base 0) (Clear y base) $ succIdx x
+        Clear base x -> do
+            put $ maybe (Ready base 0) (Clear base) $ succIdx x
             return $ Just (base `offsetBy` x, 0x20)
-        Ready y base x -> case chr of
+        Ready base x -> case chr of
             Nothing -> do
                 return Nothing
             Just 0x0a -> do
-                put $ Clear (nextIdx y) (nextLine base) 0
+                put $ Clear (nextLine base) 0
                 return Nothing
             Just chr -> do
-                put $ maybe (Clear (nextIdx y) (nextLine base) 0) (Ready y base) $ succIdx x
+                put $ maybe (Clear (nextLine base) 0) (Ready base) $ succIdx x
                 return $ Just (base `offsetBy` x, chr)
 
 video
     :: (HiddenClockResetEnable Dom25)
-    => Signal Dom25 TextCoord
-    -> Signal Dom25 (Maybe (TextAddr, Unsigned 8))
+    => Signal Dom25 (Maybe (TextAddr, Unsigned 8))
     -> ( Signal Dom25 Bool
        , VGAOut Dom25 8 8 8
        )
-video (fromSignal -> cursor) (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb)
+video (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb)
   where
     VGADriver{..} = vgaDriver vga640x480at60
     frameEnd = isFalling False (isJust <$> vgaY)
 
     (charX, glyphX) = scale @TextWidth (SNat @FontWidth) . center $ vgaX
     (charY, glyphY) = scale @TextHeight (SNat @FontHeight) . center $ vgaY
-    charXY = fromSignal $ liftA2 (,) <$> charX <*> charY
-    visible = isJust <$> charXY
+
+    visible = fromSignal $ isJust <$> charX .&&. isJust <$> charY
 
     (newLine, lineAddr) = addressBy (snatToNum (SNat @TextWidth)) charY
     (newChar, charOffset) = addressBy 1 charX
@@ -96,12 +93,7 @@ video (fromSignal -> cursor) (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb
       glyphRow
 
     pixel = enable (delayI False visible) $ msb <$> glyphRow
-
-    cursorOn = fromSignal $ oscillateWhen False $ riseEveryWhen (SNat @30) frameEnd
-    isCursor = cursorOn .&&. charXY .==. (Just <$> cursor)
-
-    pixel' = mux (delayI False isCursor) (fmap complement <$> pixel) pixel
-    rgb = maybe frame palette <$> pixel'
+    rgb = maybe frame palette <$> pixel
 
     frame = (0x30, 0x30, 0x30)
     palette 0 = (0x00, 0x00, 0x00)
