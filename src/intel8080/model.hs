@@ -1,22 +1,17 @@
-import Prelude ((^))
-import Clash.Prelude hiding ((^), lift)
+import Clash.Prelude hiding (lift)
 
 import Hardware.Intel8080
 import Hardware.Intel8080.Model
 import Hardware.TinyBASIC.Sim
 
+import System.Terminal
 import Control.Monad.State
-import Control.Monad.Reader
 import Control.Monad.Trans.Maybe
 import Data.Maybe
 import Data.Array.IO
-import qualified Data.List as L
 import qualified Data.ByteString as BS
 
 import Text.Printf
-import Data.Char (chr, ord, isPrint)
-import System.Terminal
-
 import Paths_tinybasic
 
 main :: IO ()
@@ -31,9 +26,7 @@ main = do
 
     let checkInput = do
             queued <- get
-            case queued of
-                Just prev -> return ()
-                Nothing -> put =<< lift sampleKey
+            when (isNothing queued) $ lift sampleKey >>= put
             gets isJust
         getInput = get <* put Nothing
 
@@ -56,13 +49,7 @@ main = do
 
         putData val = do
             when verbose $ liftIO $ printf "-> data 0x%02x\t" val
-            let c = chr . fromIntegral $ val
-            lift $ case val of
-                0x0d -> putStringLn ""
-                _ | isPrint c -> do
-                    putChar c >> flush
-                    when verbose $ putStringLn ""
-                _ -> return ()
+            lift $ printByte val
             return 0x00
 
     let inPort port

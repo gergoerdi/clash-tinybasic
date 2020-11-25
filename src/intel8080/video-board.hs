@@ -10,9 +10,6 @@ import RetroClash.Utils
 import RetroClash.VGA
 import RetroClash.PS2
 
-import Control.Monad
-import Control.Lens
-
 topEntity
     :: "CLK_25MHZ" ::: Clock Dom25
     -> "RESET"     ::: Reset Dom25
@@ -23,7 +20,7 @@ topEntity = withEnableGen board
     board ps2 = vga
       where
         (frameEnd, vga) = video cursor vidWrite
-        (vidReady, cursor, vidWrite) = screenEditor outByte
+        (vidWrite, cursor, vidReady) = screenEditor outByte
 
         outByte = logicBoard inByte vidReady
         inByte = keyboard ps2

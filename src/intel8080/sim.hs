@@ -1,7 +1,7 @@
-import Clash.Prelude hiding (lift)
+import Clash.Prelude
+
 import RetroClash.Sim.IO
 import Hardware.TinyBASIC.Sim
-
 import Hardware.TinyBASIC.Intel8080
 
 import Control.Monad
