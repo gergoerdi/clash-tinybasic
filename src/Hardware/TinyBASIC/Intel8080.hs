@@ -21,9 +21,14 @@ logicBoard inByte outReady = outByte
     interruptRequest = pure False
 
     (dataIn, outByte) = memoryMap _addrOut _dataOut $ do
-        matchRight $ do
-            mask 0x0000 $ romFromFile (SNat @0x0800) "_build/intel8080/image.bin"
-            mask 0x0800 $ ram0 (SNat @0x0800)
-            mask 0x1000 $ ram0 (SNat @0x1000)
+        rom <- romFromFile (SNat @0x0800) "_build/intel8080/image.bin"
+        ram <- ram0 (SNat @0x1800)
+        (acia, outByte) <- port $ acia inByte outReady
+
         matchLeft $ do
-            mask 0x10 $ port $ acia inByte outReady
+            from 0x10 $ connect acia
+        matchRight $ do
+            from 0x0000 $ connect rom
+            from 0x0800 $ connect ram
+
+        return outByte
