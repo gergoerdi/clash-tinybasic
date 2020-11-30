@@ -11,7 +11,6 @@ import Data.Maybe
 import Data.Array.IO
 import qualified Data.ByteString as BS
 
-import Text.Printf
 import Paths_tinybasic
 
 main :: IO ()
@@ -21,8 +20,6 @@ main = do
     romFile <- getDataFileName "image/intel8080/tinybasic-2.0.bin"
     bs <- fmap fromIntegral . BS.unpack <$> BS.readFile romFile
     zipWithM_ (writeArray arr) [0x0000..] bs
-
-    let verbose = False
 
     let checkInput = do
             queued <- get
@@ -34,33 +31,21 @@ main = do
             inputReady <- checkInput
             let val | inputReady = 0x03
                     | otherwise = 0x02
-            when verbose $ liftIO $ printf "<- status 0x%02x\n" val
             return val
-        putStatus val = do
-            when verbose $ liftIO $ printf "-> status 0x%02x\n" val
-            return 0x00
+        putStatus val = return ()
 
-        getData = do
-            when verbose $ lift $ putString "<- data "
-            -- val <- fromMaybe (error "exit") <$> runMaybeT waitKey
-            val <- fromMaybe 0x00 <$> getInput
-            when verbose $ liftIO $ printf "0x%02x\n" val
-            return val
-
-        putData val = do
-            when verbose $ liftIO $ printf "-> data 0x%02x\t" val
-            lift $ printByte val
-            return 0x00
+        getData = fromMaybe 0x00 <$> getInput
+        putData val = lift $ printByte val
 
     let inPort port
           | port == statusPort = getStatus
           | port == dataPort = getData
           | otherwise = return 0x00
 
-        outPort port
-          | port == statusPort = putStatus
-          | port == dataPort = putData
-          | otherwise = \_ -> return 0x00
+        outPort port x
+          | port == statusPort = putStatus x >> return 0x00
+          | port == dataPort = putData x >> return 0x00
+          | otherwise = return 0x00
 
     runMaybeT $ withTerminal $ runTerminalT $ do
         let w = World
