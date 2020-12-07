@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards, NumericUnderscores #-}
+{-# LANGUAGE RebindableSyntax #-}
 module Hardware.TinyBASIC.Intel8080 (logicBoard) where
 
 import Clash.Prelude hiding (rom)
@@ -9,7 +10,7 @@ import Hardware.ACIA
 
 import RetroClash.CPU
 import RetroClash.Port
-import RetroClash.Memory
+import RetroClash.Memory2
 
 logicBoard
     :: (HiddenClockResetEnable dom)
@@ -20,15 +21,18 @@ logicBoard inByte outReady = outByte
 
     interruptRequest = pure False
 
-    (dataIn, outByte) = memoryMap _addrOut _dataOut $ do
+    (dataIn, (), ConsR outByte NilR) = runAddressing _addrOut _dataOut $ do
         rom <- romFromFile (SNat @0x0800) "_build/intel8080/image.bin"
         ram <- ram0 (SNat @0x1800)
-        (acia, outByte) <- port $ acia inByte outReady
+        acia <- port $ acia inByte outReady
 
         matchLeft $ do
             from 0x10 $ connect acia
         matchRight $ do
             from 0x0000 $ connect rom
             from 0x0800 $ connect ram
-
-        return outByte
+      where
+        return = Return
+        (>>=) = Bind
+        (=<<) = flip (>>=)
+        m >> n = Bind m (const n)
