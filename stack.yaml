@@ -25,3 +25,5 @@ packages:
 
 ghc-options:
   dependent-map: -fexpose-all-unfoldings -fno-worker-wrapper
+  mtl: -fexpose-all-unfoldings -fno-worker-wrapper
+  transformers: -fexpose-all-unfoldings -fno-worker-wrapper
