@@ -88,14 +88,9 @@ video (fromSignal -> cursor) (fromSignal -> w) = (frameEnd, delayVGA vgaSync rgb
     charWrite = delayI Nothing w
     charLoad = delayedRam (blockRam1 ClearOnReset (SNat @TextSize) 0) charAddr charWrite
 
-    glyphLoad = fontRom charLoad (fromMaybe 0 <$> delayI Nothing (fromSignal glyphY))
-    newCol = fromSignal $ changed Nothing glyphX
-    glyphRow = delayedRegister 0x00 $ \glyphRow ->
-      mux (delayI False newChar) glyphLoad $
-      mux (delayI False newCol) ((`shiftL` 1) <$> glyphRow) $
-      glyphRow
-
-    pixel = enable (delayI False visible) $ msb <$> glyphRow
+    glyphLoad = enable (delayI False newChar) $ fontRom charLoad (fromMaybe 0 <$> delayI Nothing (fromSignal glyphY))
+    newCol = delayI False $ fromSignal $ changed Nothing glyphX
+    pixel = enable (delayI False visible) $ liftD2 shifterL glyphLoad newCol
 
     cursorOn = fromSignal $ oscillateWhen False $ riseEveryWhen (SNat @30) frameEnd
     isCursor = cursorOn .&&. charXY .==. (Just <$> cursor)
