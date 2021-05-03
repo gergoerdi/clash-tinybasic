@@ -7,6 +7,7 @@ import Hardware.Intel8080
 import Hardware.Intel8080.CPU
 import Hardware.ACIA
 
+import RetroClash.Utils
 import RetroClash.CPU
 import RetroClash.Port
 import RetroClash.Memory
@@ -20,15 +21,17 @@ logicBoard inByte outReady = outByte
 
     interruptRequest = pure False
 
-    (dataIn, outByte) = $(memoryMap @(Either (Unsigned 8) (Unsigned 16)) [|_addrOut|] [|_dataOut|] $ do
-        rom <- romFromFile (SNat @0x0800) [|"_build/intel8080/image.bin"|]
-        ram <- ram0 (SNat @0x1800)
+    dataIn = Just 0 |>. dataIn'
+    (dataIn', outByte) = $(memoryMap [|_addrOut|] [|_dataOut|] $ do
+        rom <- mapH [|Just|] =<< romFromFile (SNat @0x0800) [|"_build/intel8080/image.bin"|]
+        ram <- mapH [|Just|] =<< ram0 (SNat @0x1800)
         (acia, outByte) <- port @(Unsigned 1) [|acia inByte outReady|]
 
-        matchLeft $ do
-            from 0x10 $ connect acia
-        matchRight $ do
-            from 0x0000 $ connect rom
-            from 0x0800 $ connect ram
+        matchJust $ do
+            matchLeft @(Unsigned 8) $ do
+                from 0x10 $ connect acia
+            matchRight @(Unsigned 16) $ do
+                from 0x0000 $ connect rom
+                from 0x0800 $ connect ram
 
         return outByte)
