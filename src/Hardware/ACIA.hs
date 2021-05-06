@@ -18,12 +18,12 @@ acia
     => Signal dom (Maybe (Unsigned 8))
     -> Signal dom Bool
     -> Signal dom (Maybe (PortCommand (Unsigned 1) (Unsigned 8)))
-    -> (Signal dom (Maybe (Unsigned 8)), Signal dom (Maybe (Unsigned 8)))
+    -> (Signal dom (Unsigned 8), Signal dom (Maybe (Unsigned 8)))
 acia inByte outReady cmd = mealyStateB step Nothing (inByte, outReady, cmd)
   where
     step (inByte, outReady, cmd) = fmap (second getFirst) . runWriterT $ do
         traverse (put . Just) inByte
-        for cmd $ \case
+        fmap fromJustX $ for cmd $ \case
             ReadPort 0x0 -> do
                 inReady <- isJust <$> get
                 return $ bitCoerce $

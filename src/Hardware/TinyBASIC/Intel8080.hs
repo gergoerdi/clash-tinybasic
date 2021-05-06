@@ -11,6 +11,7 @@ import RetroClash.Utils
 import RetroClash.CPU
 import RetroClash.Port
 import RetroClash.Memory
+import Data.Maybe (fromMaybe)
 
 logicBoard
     :: (HiddenClockResetEnable dom)
@@ -21,17 +22,16 @@ logicBoard inByte outReady = outByte
 
     interruptRequest = pure False
 
-    dataIn = Just 0 |>. dataIn'
-    (dataIn', outByte) = $(memoryMap [|_addrOut|] [|_dataOut|] $ do
-        rom <- mapH [|Just|] =<< romFromFile (SNat @0x0800) [|"_build/intel8080/image.bin"|]
-        ram <- mapH [|Just|] =<< ram0 (SNat @0x1800)
+    dataIn = Just <$> (0 |>. dataIn')
+    (dataIn', outByte) = $(memoryMap [|Right 0 |>. _addrOut|] [|_dataOut|] $ do
+        rom <- romFromFile (SNat @0x0800) [|"_build/intel8080/image.bin"|]
+        ram <- ram0 (SNat @0x1800)
         (acia, outByte) <- port @(Unsigned 1) [|acia inByte outReady|]
 
-        matchJust $ do
-            matchLeft @(Unsigned 8) $ do
-                from 0x10 $ connect acia
-            matchRight @(Unsigned 16) $ do
-                from 0x0000 $ connect rom
-                from 0x0800 $ connect ram
+        matchLeft @(Unsigned 8) $ do
+            from 0x10 $ connect acia
+        matchRight @(Unsigned 16) $ do
+            from 0x0000 $ connect rom
+            from 0x0800 $ connect ram
 
         return outByte)
