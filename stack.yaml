@@ -1,29 +1,15 @@
-resolver: clash-1.4.2.yaml
+resolver: clash-1.4.3.yaml
 
 extra-deps:
-  - barbies-2.0.1.0
-  - barbies-th-0.1.2
-  - monad-supply-0.9
-
-  - lift-type-0.1.0.0
+  - barbies-th-0.1.8
   - monoidal-containers-0.6.0.1
 
   - terminal-0.2.0.0
 
-  - github: emilypi/smash
-    commit: bd3ae30bdfef3f92ce5575a1ee10228830afa11b
-    subdirs:
-      - smash-core
+  - retroclash-lib-0.1.0
+  - retroclash-sim-0.1.0
+  - clash-shake-0.1.0
 
 packages:
-  - retroclash-lib
-  - retroclash-sim
-  - clash-shake
   - clash-intel8080
   - .
-
-ghc-options:
-  dependent-map: -fexpose-all-unfoldings -fno-worker-wrapper
-  mtl: -fexpose-all-unfoldings -fno-worker-wrapper
-  transformers: -fexpose-all-unfoldings -fno-worker-wrapper
-  containers: -fexpose-all-unfoldings -fno-worker-wrapper
