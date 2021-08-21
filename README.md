@@ -1,7 +1,10 @@
 Tiny BASIC computer implemented in Clash
 ========================================
 
-As seen in http://unsafePerform.IO/blog/2020-11-17-a_tiny_computer_for_tiny_basic/
+As seen in <https://unsafePerform.IO/blog/2020-11-17-a_tiny_computer_for_tiny_basic/>
+
+This code is part of the book *Retrocomputing with Clash: Haskell for
+FPGA Hardware Design* at <https://unsafePerform.IO/retroclash/>.
 
 ## Building into a bitfile
 
