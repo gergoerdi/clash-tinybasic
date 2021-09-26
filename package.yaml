@@ -68,14 +68,25 @@ ghc-options:
 source-dirs:
   - src
 
+flags:
+  sim:
+    manual: True
+    default: True
+
 executables:
   tinybasic-intel8080-model:
     main: intel8080/model.hs
     dependencies:
       - terminal
+    when:
+    - condition: "!flag(sim)"
+      buildable: false
 
   tinybasic-intel8080-sim:
     main: intel8080/sim.hs
     dependencies:
       - retroclash-sim
       - terminal
+    when:
+    - condition: "!flag(sim)"
+      buildable: false

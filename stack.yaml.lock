@@ -61,12 +61,12 @@ packages:
   original:
     hackage: retroclash-sim-0.1.0
 - completed:
-    hackage: clash-shake-0.1.0@sha256:fe0c046b60cd99817a20d7a911af0cc3a858bf0a2df18e4581aa51a71d6faf8f,1739
+    hackage: clash-shake-0.1.1@sha256:6a18bae71e08a1463d5851a09662dc294b11ecf31d7be504bb3037257841600e,1577
     pantry-tree:
       size: 570
-      sha256: 664b2e356f5bfecdb2d3d1aae64d8774556f22a89029c723b9ed0fd7abdf0b0b
+      sha256: 2447a75d9749ba49358ae5691009737c584de1d1eb20f831d62110eaa39a5ede
   original:
-    hackage: clash-shake-0.1.0
+    hackage: clash-shake-0.1.1
 snapshots:
 - completed:
     size: 585817
