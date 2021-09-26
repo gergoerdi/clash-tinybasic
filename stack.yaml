@@ -8,7 +8,7 @@ extra-deps:
 
   - retroclash-lib-0.1.0
   - retroclash-sim-0.1.0
-  - clash-shake-0.1.0
+  - clash-shake-0.1.1
 
 packages:
   - clash-intel8080
